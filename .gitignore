@@ -5,3 +5,7 @@
 *.Rproj*
 .idea/
 packrat*/
+.Rproj.user
+inst/doc
+.local
+.config
