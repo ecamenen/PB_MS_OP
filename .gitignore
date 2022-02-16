@@ -1,0 +1,7 @@
+.Rhistory
+.RData
+.Ruserdata
+.Rprofile
+*.Rproj*
+.idea/
+packrat*/
