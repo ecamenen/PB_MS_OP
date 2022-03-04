@@ -43,12 +43,12 @@ file <- file.path("..", "inst", "extdata", "comportement_tests.xlsx")
 ### Extract test names
 ```{r}
 data_all <- read_excel(file, sheet = sheet)
-b_name_tests <- which(!grepl("^X(\\d+)$", colnames(data_all)))
+b_name_tests <- which(!grepl("(\\d+)$", colnames(data_all)))
 (name_tests <- colnames(data_all)[b_name_tests])
 
 b_name_subtests <- which(!is.na(data_all[1, ]))
 name_subtests <- as.character(data_all[1, ][b_name_subtests])
-(name_subtests <- tolower(gsub(" ", "_", name_subtests)))
+(name_subtests <- tolower(gsub(" ", "_", name_subtests))[-c(5:6)])
 
 name_test_formated <- c()
 (name_test_formated <- c(name_test_formated, paste(name_tests[1], name_subtests[seq(2)], sep = ".")))
@@ -60,7 +60,7 @@ name_test_formated <- c()
 
 ```{r}
 
-data <- read_excel(file, sheet = sheet, skip = 2, .name_repair = )
+data <- read_excel(file, sheet = sheet, skip = 2, .name_repair = )[, -c(64:65)]
 
 # data <- data_all[3:NROW(data_all), ]
 # colnames(data) <- data_all[2, ]
