@@ -1,13 +1,17 @@
 ---
 title: "Analyse"
-
-output: 
-  html_document :
-    number_sections: yes
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyse}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message = FALSE}
@@ -26,10 +30,14 @@ library(lme4) # Linear, generalized linear, & nonlinear mixed models
 library(texreg) # Convert Regression Output to LaTeX or HTML Tables
 library(sjPlot) # ICC calculations
 
-
 # Importation des datas
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_median.csv")
+library(readxl)
+library(perrot)
+data(behavioral_tests_no_replicates)
+data(behavioral_tests_no_replicates_median)
+data <- behavioral_tests_no_replicates_median
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$num_time <- as.numeric(data$time_ord)
 data$group <- relevel(data$group, ref = "NG")
 ```
 
@@ -294,8 +302,9 @@ ggResidpanel::resid_panel(mod3)
 Pour ce score on a choisi de prendre la moyenne des trois mesures.
 
 ```{r}
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
+data <- behavioral_tests_no_replicates
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$num_time <- as.numeric(data$time_ord)
 data$group <- relevel(data$group, ref = "NG")
 ```
 
@@ -557,8 +566,9 @@ ggResidpanel::resid_panel(mod3)
 On choisit de travailler avec la moyenne des trois mesures pour le score Front limb
 ## Analyses descriptives
 ```{r}
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
+data <- behavioral_tests_no_replicates
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$num_time <- as.numeric(data$time_ord)
 data$group <- relevel(data$group, ref = "NG")
 ```
 ### Histogramme de la variable Front limb
@@ -828,8 +838,9 @@ sjPlot::plot_model(mod2,
 # Effet du donneur
 ## Score Number of error
 ```{r}
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
+data <- behavioral_tests_no_replicates
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$num_time <- as.numeric(data$time_ord)
 data$group <- relevel(data$group, ref = "NG")
 data$donnor_id <- as.factor(data$donnor_id)
 ```
@@ -917,8 +928,9 @@ sjPlot::plot_model(mod2,
 ```
 ## Score Front limb
 ```{r}
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
+data <- behavioral_tests_no_replicates
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$num_time <- as.numeric(data$time_ord)
 data$group <- relevel(data$group, ref = "NG")
 data$donnor_id <- as.factor(data$donnor_id)
 ```
@@ -994,8 +1006,9 @@ sjPlot::plot_model(mod2,
 ## Score All limb
 ## Score Front limb
 ```{r}
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_median.csv")
+data <- behavioral_tests_no_replicates_median
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$num_time <- as.numeric(data$time_ord)
 data$group <- relevel(data$group, ref = "NG")
 data$donnor_id <- as.factor(data$donnor_id)
 data[data$mouse == "6" & data$time == "Before-Surgery", ]$time_to_cross <- NA
@@ -1034,7 +1047,7 @@ sjPlot::plot_model(mod2,
 # Analyse de la variable electrophie
 On va faire une ANOVA pour tester l'effet du groupe et du donneur.
 ```{r}
-data <- read_excel("/home/baptiste.criniere/Documents/Oceane/Comportement R.xlsx", skip = 2)
+data <- read_excel("../inst/extdata/comportement_tests.xlsx", skip = 2)
 data <- data %>% select(GROUP, Donnor, Mouse, "3 Months...64", "3 Months...65")
 data <- data %>% rename(Latency = "3 Months...64", Speed = "3 Months...65")
 data$GROUP <- as.factor(data$GROUP)
@@ -1177,3 +1190,6 @@ ggboxplot(data, x = "Donnor", y = "Latency", fill = "GROUP") +
     )
 ```
 
+```{r end}
+sessionInfo()
+```
