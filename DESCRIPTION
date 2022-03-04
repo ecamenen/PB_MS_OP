@@ -1,28 +1,35 @@
 Package: perrot
 Title: MS Immunology
 Version: 0.1.0
-Authors@R: 
-    c(person(given = "Etienne",
-             family = "Camenen",
-             role = c("aut", "cre"),
-             email = "etienne.camenen@gmail.com"),
-      person(given = "Baptiste",
-             family = "Criniere-Boizet",
-             role = "aut"))
-Description: Behavioral tests and neuronal electrophysiology analysis (linear mixed models) of mice with immune cell transplantation from multiple sclerosis patients.
+Authors@R: c(
+    person("Etienne", "Camenen", , "etienne.camenen@gmail.com", role = c("aut", "cre")),
+    person("Baptiste", "Criniere-Boizet", role = "aut")
+  )
+Description: Behavioral tests and neuronal electrophysiology analysis
+    (linear mixed models) of mice with immune cell transplantation from
+    multiple sclerosis patients.
 License: GPL-3
 Depends: 
     R (>= 2.10)
 Imports: 
+    bookdown,
     buildmer,
     car,
     emmeans,
     ggplot2,
+    ggpubr,
+    ggResidpanel,
+    kableExtra,
     lme4,
     lmerTest,
     magrittr,
+    pander,
     readxl,
     reshape2,
+    rstatix,
+    sjPlot,
+    texreg,
+    tidyverse,
     wesanderson
 Suggests:
     BiocCheck,

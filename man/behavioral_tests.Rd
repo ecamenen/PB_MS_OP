@@ -22,6 +22,7 @@ data(behavioral_tests_no_replicates_median)
 data(behavioral_tests_no_replicates)
 }
 \description{
-Behavioral tests of mice with immune cell transplantation from multiple sclerosis patients.
+Behavioral tests of mice with immune cell transplantation from multiple
+sclerosis patients.
 }
 \keyword{datasets}

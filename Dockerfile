@@ -7,7 +7,7 @@ FROM rocker/rstudio
 MAINTAINER Etienne CAMENEN (etienne.camenen@gmail.com)
 
 ENV PKGS libxml2-dev libcurl4-openssl-dev libssl-dev liblapack-dev git cmake qpdf
-ENV RPKGS car buildmer BiocManager covr devtools emmeans ggplot2 golem lme4 lmerTest knitr lintr openxlsx plotly readxl reshape2 rmarkdown testthat styler wesanderson
+ENV RPKGS BiocManager bookdown buildmer car covr devtools emmeans ggplot2 ggpubr ggResidpanel golem kableExtra knitr lintr lme4 lmerTest openxlsx pander plotly readxl reshape2 rmarkdown rstatix sjPlot styler testthat texreg tidyverse wesanderson
 ENV _R_CHECK_FORCE_SUGGESTS_ FALSE
 RUN apt-get update -qq && \
     apt-get install -y ${PKGS}

@@ -1,6 +1,7 @@
 #' Behavioral tests
 #'
-#' Behavioral tests of mice with immune cell transplantation from multiple sclerosis patients.
+#' Behavioral tests of mice with immune cell transplantation from multiple
+#' sclerosis patients.
 #'
 #' @docType data
 #' @keywords datasets

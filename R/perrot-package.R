@@ -2,7 +2,10 @@
 "_PACKAGE"
 
 ## usethis namespace: start
-#' @import car buildmer emmeans ggplot2 lmerTest magrittr readxl reshape2 wesanderson
+#' @import bookdown buildmer car emmeans ggplot2 ggpubr ggResidpanel
+#' kableExtra lmerTest pander readxl reshape2 rstatix sjPlot texreg
+#' tidyverse wesanderson
 #' @rawNamespace import(lme4, except = lmer)
+#' @rawNamespace import(magrittr, except = extract)
 ## usethis namespace: end
 NULL
