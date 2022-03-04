@@ -1,0 +1,392 @@
+---
+title: "parsing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{parsing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# ENVIRONMENT SETTINGS
+### Libraries loading
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r setup}
+load_libraries <- function(librairies) {
+    for (l in librairies) {
+        suppressPackageStartupMessages(
+            library(
+                l,
+                character.only = TRUE,
+                warn.conflicts = FALSE,
+                quietly = TRUE,
+                verbose = FALSE
+            )
+        )
+    }
+}
+load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "perrot", "readxl", "reshape2", "wesanderson"))
+```
+
+### Global variables
+```{r}
+sheet <- "Ligne"
+file <- file.path("..", "inst", "extdata", "comportement_tests.xlsx")
+```
+
+### Extract test names
+```{r}
+data_all <- read_excel(file, sheet = sheet)
+b_name_tests <- which(!grepl("^X(\\d+)$", colnames(data_all)))
+(name_tests <- colnames(data_all)[b_name_tests])
+
+b_name_subtests <- which(!is.na(data_all[1, ]))
+name_subtests <- as.character(data_all[1, ][b_name_subtests])
+(name_subtests <- tolower(gsub(" ", "_", name_subtests)))
+
+name_test_formated <- c()
+(name_test_formated <- c(name_test_formated, paste(name_tests[1], name_subtests[seq(2)], sep = ".")))
+(name_test_formated <- c(name_test_formated, paste(name_tests[2], name_subtests[3:4], sep = ".")))
+```
+# DATA PREPARATION
+
+### Loading
+
+```{r}
+
+data <- read_excel(file, sheet = sheet, skip = 2, .name_repair = )
+
+# data <- data_all[3:NROW(data_all), ]
+# colnames(data) <- data_all[2, ]
+```
+
+### Exploring
+```{r}
+
+data <- as.data.frame(data)
+head(data)
+
+for (i in seq(2)) {
+    data[, i] <- as.factor(data[, i])
+}
+summary(data)
+
+
+for (i in 3:NCOL(data)) {
+    data[, i] <- as.numeric(data[, i])
+}
+summary(data)
+
+dim(data)
+
+table(data[, 1]) # mouse per groups
+round(mean(table(data[, 1])), 1)
+
+print(don_per_grp <- rowSums(1 * (table(data[, seq(2)]) > 0))) # donnor per groups
+sum(don_per_grp)
+
+table(data[, 2]) # mouse per donnors
+round(mean(table(data[, 2])), 1)
+# table(data[, 2:3])
+```
+
+### List formatting
+```{r}
+
+# name_times <- unique(colnames(data))[-seq(3)]
+# name_times <- tolower(gsub(" ", "_", name_times))
+# name_times[1] <- strsplit(name_times[1], "-")[[1]][1]
+# name_times
+
+(name_times <- unique(gsub("...\\d+$", "", colnames(data)[-seq(3)])))
+
+nb_tests <- c(length(name_times) * 3)
+data_values <- data[, -seq(3)]
+tests <- lapply(
+    seq(4),
+    function(x) data_values[, (1 + (nb_tests) * (x - 1)):(nb_tests * x)]
+)
+
+tests_formatted <- lapply(
+    tests,
+    function(x) {
+        lapply(
+            seq(5),
+            function(y) x[, (1 + (3 * (y - 1))):(3 * y)]
+        )
+    }
+)
+
+# Rename dimensions
+for (i in seq(length(name_subtests))) {
+    names(tests_formatted) <- name_subtests
+    for (j in seq(length(name_times))) {
+        names(tests_formatted[[i]]) <- name_times
+        colnames(tests_formatted[[i]][[j]]) <- seq(3)
+    }
+}
+
+str(tests_formatted)
+```
+
+### Table to plot
+```{r}
+to_plot <- Reduce(
+    rbind,
+    lapply(
+        seq(4),
+        function(x) {
+            data.frame(
+                name_subtests[x],
+                data[, 1],
+                data[, 2],
+                seq(NROW(data)),
+                sapply(seq(5), function(y) {
+                    apply(tests_formatted[[x]][[y]], 1, mean)
+                })
+            )
+        }
+    )
+)
+colnames(to_plot) <- c("test", "group", "donnor", "mouse", name_times)
+row.names(to_plot) <- NULL
+to_plot
+
+to_plot$mouse <- as.factor(to_plot$mouse)
+
+str(to_plot)
+
+(to_plot2 <- melt(to_plot))
+```
+
+### Plots
+```{r}
+
+color <- function(r, g, b, n) {
+    rgb(r / 255, g / 255, b / 255, alpha = seq(1, 0.25, length.out = n))
+}
+# colors <- c(color(30, 160, 70, 3), color(200, 40, 40, 4), color(80, 80, 200, 2))
+colors <- c("seagreen4", "seagreen3", "seagreen1", "firebrick4", "firebrick3", "firebrick1", "pink", "royalblue4", "steelblue1")
+
+(p5 <- ggplot(data = to_plot2[to_plot2$test == name_subtests[1], ], aes(x = donnor, y = value)) +
+    facet_wrap(~variable, scale = "free") +
+    geom_violin(color = "gray") +
+    geom_boxplot(color = "gray") +
+    # geom_point(size = .5, color = "red", alpha = 0.5) +
+    geom_point(aes(color = donnor), alpha = 0.5) +
+    # geom_dotplot(binaxis = "y", stackdir = "center", dotsize = .1, binwidth = .5) +
+    theme_light() +
+    theme(axis.text.x = element_text(angle = 90)) +
+    scale_color_manual(values = colors))
+
+colors <- c("seagreen4", "seagreen3", "seagreen1", "firebrick4", "firebrick3", "firebrick1", "pink", "royalblue4", "steelblue1")
+(p <- ggplot(data = to_plot2[to_plot2$test == name_subtests[1], ], aes(x = variable, y = value, color = donnor)) +
+    facet_wrap(~group, scale = "free") +
+    geom_point(aes(group = mouse, color = donnor)) +
+    # geom_line(aes(group = mouse, color = donnor)) +
+    geom_smooth(method = lm, aes(group = donnor), se = FALSE) +
+    theme_light() +
+    labs(x = "", y = "", title = toupper(name_subtests[1])) +
+    # scale_y_continuous(limits = c(0, 50))  +
+    scale_color_manual(values = colors) +
+    theme(axis.text.x = element_text(angle = 90))
+)
+
+colors <- c(color(30, 160, 70, 1), color(200, 40, 40, 1), color(80, 80, 200, 1))
+(p6 <- ggplot(data = to_plot2, aes(x = variable, y = value, color = group)) +
+    facet_wrap(~test, scale = "free") +
+    geom_point(aes(group = mouse, color = group)) +
+    geom_smooth(method = lm, aes(group = group), se = FALSE) +
+    theme_light() +
+    labs(x = "", y = "") +
+    scale_color_manual(values = colors) +
+    theme(axis.text.x = element_text(angle = 90))
+)
+
+colors <- c(color(30, 160, 70, 1), color(200, 40, 40, 1), color(80, 80, 200, 1))
+(p3 <- ggplot(data = to_plot2[to_plot2$test == name_subtests[1], ], aes(x = group, y = value)) +
+    facet_wrap(~variable, scale = "free") +
+    geom_violin(color = "gray") +
+    geom_boxplot(color = "gray") +
+    # geom_point(size = .5, color = "red", alpha = 0.5) +
+    geom_point(aes(color = group), alpha = 0.5) +
+    # geom_dotplot(binaxis = "y", stackdir = "center", dotsize = .1, binwidth = .5) +
+    theme_light() +
+    labs(x = "", y = "", title = toupper(name_subtests[1])) +
+    scale_x_discrete(labels = rep("", length(levels(data[, 1])))) +
+    scale_color_manual(values = colors))
+
+colors <- c("seagreen4", "seagreen3", "seagreen1", "firebrick4", "firebrick3", "firebrick1", "pink", "royalblue4", "steelblue1")
+(p4 <- ggplot(data = to_plot2[to_plot2$test == name_subtests[1], ], aes(x = variable, y = value)) +
+    facet_wrap(~group, scale = "free") +
+    geom_violin(color = "gray") +
+    geom_boxplot(color = "gray") +
+    # geom_point(size = .5, color = "red", alpha = 0.5) +
+    geom_point(aes(color = donnor), alpha = 0.5) +
+    # geom_dotplot(binaxis = "y", stackdir = "center", dotsize = .1, binwidth = .5) +
+    theme_light() +
+    theme(axis.text.x = element_text(angle = 90)) +
+    scale_color_manual(values = colors)
+)
+
+if (!file.exists("data")) {
+    dir.create("data")
+}
+
+tiff(paste0("data/", name_subtests[1], "_violin_plots.tiff"), units = "px", width = 2000, height = 2000, res = 300)
+p
+dev.off()
+
+# colors <- c("forestgreen", "brown3", "slateblue3")
+# colors <- wes_palette("Darjeeling1", n = length(name_times))
+colors <- rgb(80 / 255, 80 / 255, 200 / 255, alpha = seq(0.25, 1, length.out = length(name_times)))
+(p2 <- ggplot(data = to_plot2, aes(x = variable, y = value, color = variable)) +
+    facet_wrap(~test, scale = "free") +
+    geom_violin() +
+    # geom_boxplot() +
+    geom_dotplot(binaxis = "y", alpha = .5, color = "gray", stackdir = "center", dotsize = .1, binwidth = .5) +
+    # geom_dotplot(binaxis = "y", aes(fill = group, color = group), alpha = .5, stackdir = "center", dotsize = .1, binwidth = .5) +
+    scale_color_manual(values = colors) +
+    scale_fill_manual(values = colors) +
+    theme_light() +
+    labs(x = "", y = "") +
+    theme(legend.position = "none"))
+
+tiff("data/group_time_plots.tiff", units = "px", width = 2000, height = 2000, res = 300)
+p2
+dev.off()
+```
+
+# MIXED MODELS
+
+### Data formatting
+
+##### With replicates
+```{r}
+
+(tests_vf <- sapply(
+    seq(4),
+    function(x) {
+        Reduce(
+            c,
+            lapply(
+                seq(5),
+                function(y) {
+                    Reduce(
+                        c,
+                        tests_formatted[[x]][[y]]
+                    )
+                }
+            )
+        )
+    }
+))
+
+t_tests <- data.frame(
+    group = data[, 1],
+    donnor_id = gsub("^\\w+ ", "", data[, 2]),
+    mouse = rep(seq(86), 5 * 3),
+    replicate = rep(rep(seq(3), each = NROW(data)), 5),
+    time = rep(name_times, each = NROW(data) * 3),
+    tests_vf
+)
+colnames(t_tests)[6:NCOL(t_tests)] <- name_subtests
+
+for (i in seq(5)) {
+    t_tests[, i] <- as.factor(t_tests[, i])
+}
+for (i in c(6:NCOL(t_tests))) {
+    t_tests[, i] <- as.numeric(t_tests[, i])
+}
+
+str(t_tests)
+
+write.table(t_tests, "data/cognitive_tests_with_rep.tsv", row.names = FALSE, sep = "\t")
+behavioral_tests_with_replicates <- t_tests
+usethis::use_data(behavioral_tests_with_replicates, overwrite = TRUE)
+```
+
+
+##### Without replicates
+```{r}
+(tests_vf2 <- sapply(
+    seq(4),
+    function(x) {
+        Reduce(
+            c,
+            lapply(
+                seq(5),
+                function(y) apply(tests_formatted[[x]][[y]], 1, mean)
+            )
+        )
+    }
+))
+
+t_tests2 <- data.frame(
+    group = data[, 1],
+    donnor_id = gsub("^\\w+ ", "", data[, 2]),
+    mouse = rep(seq(86), 5),
+    time = rep(name_times, each = NROW(data)),
+    tests_vf2
+)
+colnames(t_tests2)[5:NCOL(t_tests2)] <- name_subtests
+
+for (i in seq(4)) {
+    t_tests2[, i] <- as.factor(t_tests2[, i])
+}
+for (i in c(5:NCOL(t_tests2))) {
+    t_tests2[, i] <- as.numeric(t_tests2[, i])
+}
+
+str(t_tests2)
+
+write.table(t_tests2, "data/cognitive_tests_without_rep.tsv", row.names = FALSE, sep = "\t")
+behavioral_tests_no_replicates <- t_tests2
+usethis::use_data(behavioral_tests_no_replicates, overwrite = TRUE)
+```
+
+
+##### Without replicates and median
+```{r}
+(tests_vf2 <- sapply(
+    seq(4),
+    function(x) {
+        Reduce(
+            c,
+            lapply(
+                seq(5),
+                function(y) apply(tests_formatted[[x]][[y]], 1, median)
+            )
+        )
+    }
+))
+
+t_tests3 <- data.frame(
+    group = data[, 1],
+    donnor_id = gsub("^\\w+ ", "", data[, 2]),
+    mouse = rep(seq(86), 5),
+    time = rep(name_times, each = NROW(data)),
+    tests_vf2
+)
+colnames(t_tests3)[5:NCOL(t_tests3)] <- name_subtests
+
+for (i in seq(4)) {
+    t_tests3[, i] <- as.factor(t_tests3[, i])
+}
+for (i in c(5:NCOL(t_tests3))) {
+    t_tests3[, i] <- as.numeric(t_tests3[, i])
+}
+
+behavioral_tests_no_replicates_median <- t_tests3
+usethis::use_data(behavioral_tests_no_replicates_median, overwrite = TRUE)
+```
+
+```{r end}
+sessionInfo()
+```
