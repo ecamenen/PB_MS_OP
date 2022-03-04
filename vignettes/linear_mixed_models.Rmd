@@ -9,69 +9,141 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+    collapse = TRUE,
+    comment = "#>"
 )
 ```
 
 ```{r setup}
-library(perrot)
+load_libraries <- function(librairies) {
+    for (l in librairies) {
+        suppressPackageStartupMessages(
+            library(
+                l,
+                character.only = TRUE,
+                warn.conflicts = FALSE,
+                quietly = TRUE,
+                verbose = FALSE
+            )
+        )
+    }
+}
+load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "perrot", "readxl", "reshape2", "wesanderson"))
 data(behavioral_tests_with_replicates)
 data(behavioral_tests_no_replicates)
 ```
 
-
 ### Forward selection
 ```{r}
-f <- time_to_cross ~ group * time * donnor_id + (1 | donnor_id) + (1 | replicate)
-mod_for <- buildmer(f, data = t_tests)
+f <- time_to_cross ~ group + num_time + group:num_time + (group + num_time + group:num_time | mouse)
+mod_for <- buildmer(f, data = behavioral_tests_no_replicates)
 summary(mod_for)
 ```
 
 ### Models
 ```{r}
-mod_grp <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate), data = t_tests)
-# mod_grp_w <- lmerTest::lmer(time_to_cross ~ group, data = t_tests2)
+mod_grp <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate), data = behavioral_tests_with_replicates)
+# mod_grp_w <- lmerTest::lmer(time_to_cross ~ group, data = behavioral_tests_no_replicates)
 ```
 
 ```{r}
-library(flexplot)
-data(relationship_satisfaction)
-summary(relationship_satisfaction)
-str(relationship_satisfaction)
+# flexplot::flexplot(time_to_cross ~ group + time, data = behavioral_tests_no_replicates)
 ```
 ```{r}
-flexplot(satisfaction ~ communication + separated | gender + interests, data = relationship_satisfaction)
+# flexplot::flexplot(time_to_cross ~ group | time, data = behavioral_tests_no_replicates)
 ```
 
 ```{r}
-flexplot(time_to_cross ~ group + 1 | replicate, data = t_tests)
+mod_gt <- lmerTest::lmer(time_to_cross ~ group + time + (1 | replicate), data = behavioral_tests_with_replicates)
 ```
 
 ```{r}
-mod_gt <- lmerTest::lmer(time_to_cross ~ group + time + (1 | replicate), data = t_tests)
-```
-
-```{r}
-(mod1 <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate) + (group | time), data = t_tests))
-# mod1 <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate), data = t_tests)
+(mod1 <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate) + (group | time), data = behavioral_tests_with_replicates))
+# mod1 <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate), data = behavioral_tests_with_replicates)
 mod1 <- update(mod1, REML = FALSE)
-mod2 <- lmerTest::lmer(time_to_cross ~ group * donnor_id + (1 | replicate) + (1 | mouse), data = t_tests)
+mod2 <- lmerTest::lmer(time_to_cross ~ group * donnor_id + (1 | replicate) + (1 | mouse), data = behavioral_tests_with_replicates)
 mod2 <- update(mod2, REML = FALSE)
-mod3 <- lmerTest::lmer(time_to_cross ~ group * time + (1 | replicate) + (1 | donnor_id / mouse), data = t_tests)
-mod4 <- lme4::lmer(time_to_cross ~ group + donnor_id + time + (1 | replicate), data = t_tests)
-mod5 <- lmerTest::lmer(time_to_cross ~ group + donnor_id + time + (1 | replicate), data = t_tests)
+mod3 <- lmerTest::lmer(time_to_cross ~ group * time + (1 | replicate) + (1 | donnor_id / mouse), data = behavioral_tests_with_replicates)
+mod4 <- lme4::lmer(time_to_cross ~ group + donnor_id + time + (1 | replicate), data = behavioral_tests_with_replicates)
+mod5 <- lmerTest::lmer(time_to_cross ~ group + donnor_id + time + (1 | replicate), data = behavioral_tests_with_replicates)
+```
+
+```{r lmm_preprocess}
+behavioral_tests_no_replicates$group <- factor(behavioral_tests_no_replicates$group, levels = c("NG", "HD", "MS"))
+behavioral_tests_no_replicates$num_time <- as.numeric(factor(behavioral_tests_no_replicates$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months")))
+behavioral_tests_no_replicates[6, "time_to_cross"] <- NA
+#
+# temp <- identify_outliers(behavioral_tests_no_replicates, time_to_cross)
+#
+# for (i in 1:nrow(temp)){
+#   behavioral_tests_no_replicates[behavioral_tests_no_replicates$mouse==temp$mouse[i]&behavioral_tests_no_replicates$time==temp$time[i],]$time_to_cross <- NA
+# }
+```
+
+```{r }
+mod0 <- lm(time_to_cross ~ group * num_time, data = behavioral_tests_no_replicates)
+mod0.0 <- lme4::lmer(time_to_cross ~ 1 + (1 | mouse), data = behavioral_tests_no_replicates)
+mod1.0 <- lme4::lmer(time_to_cross ~ group + (1 | mouse), data = behavioral_tests_no_replicates) # ns
+mod1.1 <- lme4::lmer(time_to_cross ~ group + num_time + (1 | mouse), data = behavioral_tests_no_replicates) # *
+mod1.2 <- lme4::lmer(time_to_cross ~ group + num_time + (num_time | mouse), data = behavioral_tests_no_replicates) # *
+
+mod1.3 <- lmerTest::lmer(time_to_cross ~ group + num_time + group * num_time + (1 | mouse), data = behavioral_tests_no_replicates) # *
+summary(mod1.3) # on garde celui-la
+
+mod2 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (num_time | mouse), data = behavioral_tests_no_replicates)
+mod2.2 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (num_time + group:num_time | mouse), data = behavioral_tests_no_replicates) # ns par rapport au 1.3
+mod3 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (num_time | mouse) + (1 | donnor_id), data = behavioral_tests_no_replicates)
+
+mod5 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (group:num_time + num_time - 1 | mouse) + (group + group:num_time | donnor_id), data = behavioral_tests_no_replicates) # *
+mod4 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (group:num_time | mouse) + (1 | donnor_id), data = behavioral_tests_no_replicates)
+mod <- lmerTest::lmer(time_to_cross ~ group + group * num_time + (num_time | mouse) + (1 | donnor_id), data = behavioral_tests_no_replicates)
+```
+##### 27.3 pour le NG, et 18 pour HD et MSn, significativement différent de NG
+##### Pour une unite de temps, le score baisse de 3 points pour NG, pour un HD et MS, ça baisse moins vite (-0.8 par unite de temps; -0.9 pour MS)
+```{r}
+library(ggplot2)
+# flexplot::flexplot(time_to_cross ~ num_time | group, data = behavioral_tests_no_replicates)
 ```
 
 ### Statistics
 ```{r}
-mod <- mod_grp
+mod <- mod0
 summary(mod)
 car::Anova(mod, type = "II")
 ```
 
+```{r }
+mod0 <- lm(time_to_cross ~ donnor_id * num_time, data = behavioral_tests_no_replicates)
+
+baseline <- behavioral_tests_no_replicates[behavioral_tests_no_replicates$time == "Before-Surgery", ]
+mod0 <- lm(time_to_cross ~ donnor_id, data = baseline)
+shapiro.test(residuals(mod))
+bartlett.test(time_to_cross ~ donnor_id, data = baseline)
+# aov(time_to_cross ~ donnor_id, data = baseline) %>%  anova()
+# aov(time_to_cross ~ donnor_id, data = baseline) %>% tukey_hsd()
+kruskal.test(time_to_cross ~ donnor_id, data = baseline) # ns
+# dunn_test(time_to_cross ~ donnor_id, data = baseline) # ns
+
+mod0.0 <- lme4::lmer(time_to_cross ~ 1 + (1 | mouse), data = behavioral_tests_no_replicates)
+mod1.0 <- lme4::lmer(time_to_cross ~ donnor_id + (1 | mouse), data = behavioral_tests_no_replicates) # ns
+mod1.1 <- lme4::lmer(time_to_cross ~ group + num_time + (1 | mouse), data = behavioral_tests_no_replicates) # *
+mod1.2 <- lme4::lmer(time_to_cross ~ group + num_time + (num_time | mouse), data = behavioral_tests_no_replicates) # *
+
+mod1.3 <- lmerTest::lmer(time_to_cross ~ group + num_time + group * num_time + (1 | mouse), data = behavioral_tests_no_replicates) # *
+summary(mod1.3) # on garde celui-la
+
+mod2 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (num_time | mouse), data = behavioral_tests_no_replicates)
+mod2.2 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (num_time + group:num_time | mouse), data = behavioral_tests_no_replicates) # ns par rapport au 1.3
+mod3 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (num_time | mouse) + (1 | donnor_id), data = behavioral_tests_no_replicates)
+
+mod5 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (group:num_time + num_time - 1 | mouse) + (group + group:num_time | donnor_id), data = behavioral_tests_no_replicates) # *
+mod4 <- lmerTest::lmer(time_to_cross ~ group + num_time + group:num_time + (group:num_time | mouse) + (1 | donnor_id), data = behavioral_tests_no_replicates)
+mod <- lmerTest::lmer(time_to_cross ~ group + group * num_time + (num_time | mouse) + (1 | donnor_id), data = behavioral_tests_no_replicates)
+```
+
 ### Residuals
 ```{r}
+mod0 <- lm(time_to_cross ~ donnor_id * num_time, data = behavioral_tests_no_replicates)
 plot(mod) # Diagnostic plots for mixed-model fits
 qqnorm(residuals(mod))
 qqline(residuals(mod), col = "red")
@@ -83,10 +155,11 @@ plot(density(residuals(mod)))
 
 ##### Pairwise comparisons
 ```{r}
-(post_mod1 <- emmeans::lsmeans(mod, "group"))
-pairs(post_mod1)
-# pairs(emmeans::lsmeans(mod, time_to_cross ~ group * donnor_id))
-plot(pairs(post_mod1))
+mod <- lmerTest::lmer(time_to_cross ~ group * num_time + (1 | donnor_id / mouse), data = behavioral_tests_no_replicates)
+# (post_mod1 <- emmeans::lsmeans(mod, time_to_cross ~ group * num_time))
+# pairs(post_mod1)
+# pairs(emmeans::lsmeans(mod, time_to_cross ~ group + num_time + group * num_time ))
+# plot(pairs(post_mod1))
 ```
 
 ##### Pairwise Statistics
@@ -99,11 +172,12 @@ plot(post_mod2)
 ```
 
 ```{r}
-anova(mod2, mod1)
+# anova(mod2, mod1)
 # coefficients
 vcov(mod) # Covariance matrix of the fixed-effect estimates
 VarCorr(mod) # Estimated random-effects variances, standard deviations, and correlations
 AIC(mod)
+BIC(mod)
 ```
 
 ```{r end}
