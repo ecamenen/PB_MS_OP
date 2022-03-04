@@ -1,0 +1,39 @@
+Package: perrot
+Title: MS Immunology
+Version: 0.1.0
+Authors@R: 
+    c(person(given = "Etienne",
+             family = "Camenen",
+             role = c("aut", "cre"),
+             email = "etienne.camenen@gmail.com"),
+      person(given = "Baptiste",
+             family = "Criniere-Boizet",
+             role = "aut"))
+Description: Behavioral tests and neuronal electrophysiology analysis (linear mixed models) of mice with immune cell transplantation from multiple sclerosis patients.
+License: GPL-3
+Depends: 
+    R (>= 2.10)
+Imports: 
+    buildmer,
+    car,
+    emmeans,
+    ggplot2,
+    lme4,
+    lmerTest,
+    magrittr,
+    readxl,
+    reshape2,
+    wesanderson
+Suggests:
+    BiocCheck,
+    devtools,
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: 
+    knitr
+biocViews: ImmunoOncology, Regression, Visualization
+Encoding: UTF-8
+LazyData: false
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2

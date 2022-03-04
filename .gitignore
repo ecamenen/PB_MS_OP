@@ -4,8 +4,15 @@
 .Rprofile
 *.Rproj*
 .idea/
-packrat*/
+dev/
 .Rproj.user
 inst/doc
 .local
 .config
+.cache/
+/doc/
+/Meta/
+*.xlsx
+*.tsv
+*.tiff
+*.gz
