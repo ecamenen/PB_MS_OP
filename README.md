@@ -4,6 +4,9 @@
 # perrot
 
 <!-- badges: start -->
+
+[![R build
+status](https://github.com/ecamenen/perrot/workflows/R-CMD-check/badge.svg)](https://github.com/ecamenen/perrot/actions)
 <!-- badges: end -->
 
 Behavioral tests and neuronal electrophysiology analysis (linear mixed

@@ -13,3 +13,4 @@ tiff$
 ^doc$
 ^Meta$
 ^README\.Rmd$
+^\.github$
