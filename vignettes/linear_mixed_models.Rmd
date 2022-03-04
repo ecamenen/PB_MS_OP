@@ -1,0 +1,111 @@
+---
+title: "linear_mixed_models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{linear_mixed_models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(perrot)
+data(behavioral_tests_with_replicates)
+data(behavioral_tests_no_replicates)
+```
+
+
+### Forward selection
+```{r}
+f <- time_to_cross ~ group * time * donnor_id + (1 | donnor_id) + (1 | replicate)
+mod_for <- buildmer(f, data = t_tests)
+summary(mod_for)
+```
+
+### Models
+```{r}
+mod_grp <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate), data = t_tests)
+# mod_grp_w <- lmerTest::lmer(time_to_cross ~ group, data = t_tests2)
+```
+
+```{r}
+library(flexplot)
+data(relationship_satisfaction)
+summary(relationship_satisfaction)
+str(relationship_satisfaction)
+```
+```{r}
+flexplot(satisfaction ~ communication + separated | gender + interests, data = relationship_satisfaction)
+```
+
+```{r}
+flexplot(time_to_cross ~ group + 1 | replicate, data = t_tests)
+```
+
+```{r}
+mod_gt <- lmerTest::lmer(time_to_cross ~ group + time + (1 | replicate), data = t_tests)
+```
+
+```{r}
+(mod1 <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate) + (group | time), data = t_tests))
+# mod1 <- lmerTest::lmer(time_to_cross ~ group + (1 | replicate), data = t_tests)
+mod1 <- update(mod1, REML = FALSE)
+mod2 <- lmerTest::lmer(time_to_cross ~ group * donnor_id + (1 | replicate) + (1 | mouse), data = t_tests)
+mod2 <- update(mod2, REML = FALSE)
+mod3 <- lmerTest::lmer(time_to_cross ~ group * time + (1 | replicate) + (1 | donnor_id / mouse), data = t_tests)
+mod4 <- lme4::lmer(time_to_cross ~ group + donnor_id + time + (1 | replicate), data = t_tests)
+mod5 <- lmerTest::lmer(time_to_cross ~ group + donnor_id + time + (1 | replicate), data = t_tests)
+```
+
+### Statistics
+```{r}
+mod <- mod_grp
+summary(mod)
+car::Anova(mod, type = "II")
+```
+
+### Residuals
+```{r}
+plot(mod) # Diagnostic plots for mixed-model fits
+qqnorm(residuals(mod))
+qqline(residuals(mod), col = "red")
+# hist(residuals(mod))
+plot(density(residuals(mod)))
+```
+
+### Post-hoc
+
+##### Pairwise comparisons
+```{r}
+(post_mod1 <- emmeans::lsmeans(mod, "group"))
+pairs(post_mod1)
+# pairs(emmeans::lsmeans(mod, time_to_cross ~ group * donnor_id))
+plot(pairs(post_mod1))
+```
+
+##### Pairwise Statistics
+```{r}
+# CLD(emmeans::lsmeans(mod, "donnor_id"), , Letters = letters)
+# lmerTest::lsmeansLT(mod, test.effs = "donnor_id")
+(post_mod2 <- lmerTest::lsmeansLT(mod, "group"))
+# post_mod2 <- lmerTest::lsmeansLT(mod, test.effs = "group + time"))
+plot(post_mod2)
+```
+
+```{r}
+anova(mod2, mod1)
+# coefficients
+vcov(mod) # Covariance matrix of the fixed-effect estimates
+VarCorr(mod) # Estimated random-effects variances, standard deviations, and correlations
+AIC(mod)
+```
+
+```{r end}
+sessionInfo()
+```
