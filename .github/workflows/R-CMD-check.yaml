@@ -34,6 +34,3 @@ jobs:
         with:
           name: ${{ runner.os }}-r${{ matrix.config.r }}-results
           path: check
-
-      - name: BiocCheck
-        run: R -e 'BiocCheck::BiocCheck(".")'
