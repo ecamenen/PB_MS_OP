@@ -122,6 +122,7 @@ selected <- lapply(data, function(x) rep(ncol(x), 2))
 
 ```{r supervised}
 model <- block.splsda(X = data, Y = Y, ncomp = ncomp, keepX = selected, design = create_design())
+model$prop_expl_var
 plotDiablo(model, ncomp = 1)
 plot_model(model)
 # Number of errors and front limb only are the best discriminant
