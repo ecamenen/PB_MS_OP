@@ -17,22 +17,12 @@ knitr::opts_chunk$set(
 ```{r setup, echo=FALSE, warning=FALSE, message = FALSE}
 library("mixOmics")
 library("readxl")
+library(perrot)
 ```
 
 ```{r data}
-path <- file.path("~", "inst", "extdata")
-file <- file.path(path, "behavioral.xlsx")
-sheets <- excel_sheets(file)
-data <- list()
-for (s in sheets) {
-    temp <- data.frame(read_excel(file, sheet = s))
-    rownames(temp) <- temp[, 1]
-    temp <- temp[, -1]
-    # colnames(temp) <- c("before", "1week", "1month", "2months", "3months")
-    data <- c(data, list(temp))
-}
-# names(data) <- c("time", "errors", "front", "all")
-names(data) <- sheets
+data(behavioral_tests_multiblock)
+data <- behavioral_tests_multiblock
 
 Y <- row.names(data[[1]])
 Y <- gsub("(\\w{2,3}).*", "\\1", Y)

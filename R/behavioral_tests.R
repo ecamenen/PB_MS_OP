@@ -16,3 +16,7 @@
 #' @rdname behavioral_tests
 #' @usage data(behavioral_tests_no_replicates)
 "behavioral_tests_no_replicates"
+
+#' @rdname behavioral_tests
+#' @usage data(behavioral_tests_multiblock)
+"behavioral_tests_multiblock"

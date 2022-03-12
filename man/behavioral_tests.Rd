@@ -6,6 +6,7 @@
 \alias{behavioral_tests_with_replicates}
 \alias{behavioral_tests_no_replicates_median}
 \alias{behavioral_tests_no_replicates}
+\alias{behavioral_tests_multiblock}
 \title{Behavioral tests}
 \format{
 An object of class \code{data.frame} with 1290 rows and 9 columns.
@@ -13,6 +14,8 @@ An object of class \code{data.frame} with 1290 rows and 9 columns.
 An object of class \code{data.frame} with 430 rows and 8 columns.
 
 An object of class \code{data.frame} with 430 rows and 8 columns.
+
+An object of class \code{list} of length 4.
 }
 \usage{
 data(behavioral_tests_with_replicates)
@@ -20,6 +23,8 @@ data(behavioral_tests_with_replicates)
 data(behavioral_tests_no_replicates_median)
 
 data(behavioral_tests_no_replicates)
+
+data(behavioral_tests_multiblock)
 }
 \description{
 Behavioral tests of mice with immune cell transplantation from multiple
