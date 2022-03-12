@@ -1,8 +1,8 @@
 ---
-title: "linear_mixed_models"
+title: "Linear Mixed Models"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{linear_mixed_models}
+  %\VignetteIndexEntry{Linear Mixed Models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
