@@ -6,14 +6,14 @@ FROM rocker/rstudio
 
 MAINTAINER Etienne CAMENEN (etienne.camenen@gmail.com)
 
-ENV PKGS libxml2-dev libcurl4-openssl-dev libssl-dev liblapack-dev git cmake qpdf
-ENV RPKGS BiocManager bookdown buildmer car covr devtools emmeans ggplot2 ggpubr ggResidpanel golem kableExtra knitr lintr lme4 lmerTest openxlsx pander plotly readxl reshape2 rmarkdown rstatix sjPlot styler testthat texreg tidyverse wesanderson
+ENV PKGS cmake git libcurl4-openssl-dev libglpk-dev liblapack-dev libssl-dev libxml2-dev libxt6 qpdf
 ENV _R_CHECK_FORCE_SUGGESTS_ FALSE
 RUN apt-get update -qq && \
-    apt-get install -y ${PKGS}
+    apt-get install -y --no-install-recommends ${PKGS}
+ENV RPKGS BiocManager bookdown buildmer car corrplot covr devtools emmeans factoextra FactoMineR ggplot2 ggpubr ggResidpanel golem kableExtra knitr lintr lme4 lmerTest markdown MASS modelr openxlsx pander plotly readxl reshape2 rmarkdown rstatix sjPlot styler testthat texreg tidyverse wesanderson
 RUN Rscript -e 'install.packages(commandArgs(TRUE))' ${RPKGS}
 RUN Rscript -e 'BiocManager::install("BiocCheck")'
-RUN apt-get install -y --no-install-recommends libxt6
-RUN Rscript -e 'install.packages("markdown")'
+RUN Rscript -e 'BiocManager::install("mixOmics")'
 RUN Rscript -e 'devtools::install_github("dustinfife/flexplot")'
+RUN Rscript -e 'devtools::install_github("rgcca-factory/RGCCA")'
 COPY . /home/rstudio
