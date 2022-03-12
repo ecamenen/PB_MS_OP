@@ -1,0 +1,181 @@
+---
+title: "Multiblock analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Multiblock analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r setup, echo=FALSE, warning=FALSE, message = FALSE}
+library("mixOmics")
+library("readxl")
+```
+
+```{r data}
+path <- file.path("~", "inst", "extdata")
+file <- file.path(path, "behavioral.xlsx")
+sheets <- excel_sheets(file)
+data <- list()
+for (s in sheets) {
+    temp <- data.frame(read_excel(file, sheet = s))
+    rownames(temp) <- temp[, 1]
+    temp <- temp[, -1]
+    # colnames(temp) <- c("before", "1week", "1month", "2months", "3months")
+    data <- c(data, list(temp))
+}
+# names(data) <- c("time", "errors", "front", "all")
+names(data) <- sheets
+
+Y <- row.names(data[[1]])
+Y <- gsub("(\\w{2,3}).*", "\\1", Y)
+```
+
+```{r func}
+create_design <- function(corr = 0.1) {
+    design <- matrix(
+        corr,
+        ncol = length(data),
+        nrow = length(data),
+        dimnames = list(names(data), names(data))
+    )
+    diag(design) <- 0
+}
+
+plot_model <- function(model) {
+    plotIndiv(
+        model,
+        ind.names = TRUE,
+        group = as.factor(Y),
+        # pch = as.factor(Y),
+        ellipse = TRUE,
+        centroid = TRUE,
+        # col.per.group = color.mixo(seq(3)),
+        legend = TRUE,
+        legend.title = "Groups",
+        legend.title.pch = ""
+    )
+
+    # symbols <- list(1, 3, 6, 7)
+    # names(symbols) <- names(data)
+    # plotArrow(
+    #     model,
+    #     ind.names = FALSE,
+    #     group = as.factor(Y),
+    #     pch = symbols,
+    #     pch.size = 3,
+    #     legend.title = "Groups",
+    #     legend = TRUE
+    # )
+
+    plotVar(
+        model,
+        var.names = TRUE,
+        style = "graphics",
+        legend = TRUE,
+        cutoff = 0.5,
+        pch = rep(10, 4),
+        cex = rep(1, 4)
+    ) # , col = c('darkorchid', 'brown1', 'lightgreen', "red"))
+
+    # plotLoadings(model, comp = 2, contrib = "max", method = "median")
+
+    # network(
+    #     model,
+    #     comp = 1:2,
+    #     interactive = TRUE,
+    #     blocks = seq_along(data),
+    #     color.edge = color.GreenRed(50),
+    #     # shape.node = c("rectangle", "circle"),
+    #     # color.node = c('darkorchid', 'brown1', 'lightgreen'),
+    #     cutoff = 0.7
+    # )
+}
+```
+
+```{r tuning, eval = FALSE}
+tuned_model <- block.plsda(X = data, Y = Y, ncomp = 5, design = create_design())
+perf.diablo <- perf(
+    tuned_model,
+    validation = "Mfold",
+    folds = 10,
+    nrepeat = 10,
+    cpus = parallel::detectCores()
+)
+plot(perf.diablo)
+
+(ncomp <- perf.diablo$choice.ncomp$WeightedVote["Overall.BER", "centroids.dist"])
+perf.diablo$choice.ncomp$WeightedVote
+```
+
+```{r tuning2}
+ncomp <- 2
+selected <- lapply(data, function(x) rep(ncol(x), 2))
+```
+
+```{r supervised}
+model <- block.splsda(X = data, Y = Y, ncomp = ncomp, keepX = selected, design = create_design())
+plotDiablo(model, ncomp = 1)
+plot_model(model)
+# Number of errors and front limb only are the best discriminant
+```
+
+```{r corr, eval = FALSE}
+circosPlot(
+    model,
+    cutoff = 0.7, line = TRUE,
+    # color.blocks= c('darkorchid', 'brown1', 'lightgreen'),
+    # color.cor = c("chocolate3","grey20"),
+    size.labels = 1.5,
+    size.variables = 0.75
+)
+
+cimDiablo(
+    model,
+    comp = 1:2 # ,
+    # legend.position = "topright",
+    # margins = c(7, 20)
+)
+```
+
+```{r perf}
+perf.diablo <- perf(
+    model,
+    validation = "Mfold",
+    M = 10, nrepeat = 10,
+    dist = "centroids.dist",
+    # cpus = parallel::detectCores()
+)
+
+perf.diablo$MajorityVote.error.rate
+perf.diablo$WeightedVote.error.rate
+
+auroc(
+    model,
+    roc.block = 3,
+    roc.comp = 2,
+    print = FALSE
+)
+```
+
+```{r unsupervised}
+model <- block.spls(
+    X = data,
+    indY = 1,
+    keepX = selected,
+    ncomp = ncomp,
+    design = create_design(0.5)
+)
+plot_model(model)
+```
+
+```{r end}
+sessionInfo()
+```
