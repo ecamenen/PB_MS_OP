@@ -1,8 +1,8 @@
 ---
-title: "Multiblock analysis"
+title: "Multiblock analysis: mixOmics"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Multiblock analysis}
+  %\VignetteIndexEntry{Multiblock analysis: mixOmics}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup, echo=FALSE, warning=FALSE, message = FALSE}
+```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
 library("mixOmics")
 library("readxl")
 library(perrot)

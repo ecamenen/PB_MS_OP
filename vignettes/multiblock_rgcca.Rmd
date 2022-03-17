@@ -1,0 +1,85 @@
+---
+title: "multiblock_rgcca"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{multiblock_rgcca}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
+library("mixOmics")
+library("readxl")
+library("RGCCA")
+library(corrplot)
+library(FactoMineR)
+library(perrot)
+```
+
+```{r data}
+data(behavioral_tests_multiblock)
+blocks <- behavioral_tests_multiblock
+
+Y <- row.names(blocks[[1]])
+Y <- gsub("(\\w{2,3}).*", "\\1", Y) -> grp
+Y <- as.numeric(as.factor(Y))
+Y <- data.frame(Y)
+row.names(Y) <- row.names(blocks[[1]])
+
+n <- length(blocks) + 1
+blocks[[n]] <- Y
+names(blocks)[n] <- "grp"
+```
+
+```{r rgcca}
+# ncomp = c(2, 2, 2, 2, 1)
+rgcca_res <- rgcca(blocks = blocks, ncomp = 1, response = n, tau = "optimal")
+eval <- rgcca_cv_k(rgcca_res, validation = "loo", n_cores = 1)
+round(eval$scores, 3)
+plot_ave(rgcca_res)
+plot_var_1D(rgcca_res, i_block = 2)
+plot_var_1D(rgcca_res, i_block = 3)
+plot_ind(
+    rgcca_res,
+    i_block = 2,
+    i_block_y = 3,
+    compx = 1,
+    compy = 1,
+    resp = grp,
+    title = ""
+)
+```
+
+```{r tests}
+blocks_rgcca <- data.frame(Reduce(cbind, rgcca_res$Y))
+colnames(blocks_rgcca) <- names(blocks)
+(M <- cor(blocks_rgcca))
+# sapply(
+#     names(behavioral_tests_multiblock),
+#     function(i) {
+#         cor.test(
+#             rgcca_res$Y[[i]],
+#             rgcca_res$Y[["grp"]]
+#         )$p.value
+#     }
+# )
+corrplot(M, type = "lower", diag = FALSE, addCoef.col = "black")
+```
+
+```{r pca}
+pca_res <- rgcca(blocks = list(blocks_rgcca), ncomp = 2, method = "pca")
+plot_ave(pca_res)
+plot_var_2D(pca_res, i_block = 1)
+plot_ind(pca_res, i_block = 1, resp = grp, title = "")
+```
+
+```{r end}
+sessionInfo()
+```
