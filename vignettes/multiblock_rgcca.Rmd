@@ -39,13 +39,14 @@ names(blocks)[n] <- "grp"
 ```
 
 ```{r rgcca}
-# ncomp = c(2, 2, 2, 2, 1)
+# ncomp = c(2, 2, 2, 2, , 1, 1)
 rgcca_res <- rgcca(blocks = blocks, ncomp = 1, response = n, tau = "optimal")
 eval <- rgcca_cv_k(rgcca_res, validation = "loo", n_cores = 1)
 round(eval$scores, 3)
 plot_ave(rgcca_res)
 plot_var_1D(rgcca_res, i_block = 2)
 plot_var_1D(rgcca_res, i_block = 3)
+# 3 months have a low contribution for both blocks
 plot_ind(
     rgcca_res,
     i_block = 2,
@@ -60,7 +61,7 @@ plot_ind(
 ```{r tests}
 blocks_rgcca <- data.frame(Reduce(cbind, rgcca_res$Y))
 colnames(blocks_rgcca) <- names(blocks)
-(M <- cor(blocks_rgcca))
+(M <- cor(blocks_rgcca, use = "pairwise.complete.obs"))
 # sapply(
 #     names(behavioral_tests_multiblock),
 #     function(i) {

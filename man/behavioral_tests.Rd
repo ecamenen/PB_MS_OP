@@ -15,7 +15,7 @@ An object of class \code{data.frame} with 430 rows and 8 columns.
 
 An object of class \code{data.frame} with 430 rows and 8 columns.
 
-An object of class \code{list} of length 4.
+An object of class \code{list} of length 5.
 }
 \usage{
 data(behavioral_tests_with_replicates)

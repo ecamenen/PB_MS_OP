@@ -22,7 +22,7 @@ library(perrot)
 
 ```{r data}
 data(behavioral_tests_multiblock)
-data <- behavioral_tests_multiblock
+data <- behavioral_tests_multiblock[-5]
 
 Y <- row.names(data[[1]])
 Y <- gsub("(\\w{2,3}).*", "\\1", Y)
@@ -107,14 +107,16 @@ perf.diablo$choice.ncomp$WeightedVote
 
 ```{r tuning2}
 ncomp <- 2
-selected <- lapply(data, function(x) rep(ncol(x), 2))
+selected <- lapply(data, function(x) rep(ncol(x), ncomp))
 ```
 
 ```{r supervised}
 model <- block.splsda(X = data, Y = Y, ncomp = ncomp, keepX = selected, design = create_design())
 model$prop_expl_var
 plotDiablo(model, ncomp = 1)
-plot_model(model)
+if (ncomp > 1) {
+      plot_model(model)
+  }
 # Number of errors and front limb only are the best discriminant
 ```
 
@@ -164,7 +166,9 @@ model <- block.spls(
     ncomp = ncomp,
     design = create_design(0.5)
 )
-plot_model(model)
+if (ncomp > 1) {
+      plot_model(model)
+  }
 ```
 
 ```{r end}

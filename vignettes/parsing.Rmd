@@ -31,7 +31,7 @@ load_libraries <- function(librairies) {
         )
     }
 }
-load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "perrot", "readxl", "reshape2", "wesanderson"))
+load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "openxlsx", "perrot", "readxl", "reshape2", "wesanderson"))
 ```
 
 ### Global variables
@@ -385,6 +385,58 @@ for (i in c(5:NCOL(t_tests3))) {
 
 behavioral_tests_no_replicates_median <- t_tests3
 usethis::use_data(behavioral_tests_no_replicates_median, overwrite = TRUE)
+```
+
+##### For multiblocks
+```{r}
+(multiblock <- lapply(
+    seq(4),
+    function(x) {
+        sapply(
+            seq(5),
+            function(y) apply(tests_formatted[[x]][[y]], 1, mean)
+        )
+    }
+))
+
+test_formatted <- c("time", "errors", "front", "all")
+time_formatted <- c("before", "1week", "1month", "2months", "3months")
+for (i in seq(4)) {
+  par(mfrow = c(2, 3))
+    colnames(multiblock[[i]]) <- paste(test_formatted[i], time_formatted, sep = "_")
+    rownames(multiblock[[i]]) <- paste(data$Donnor, data$Mouse)
+    if (i == 1)
+      multiblock[[i]] <- log(multiblock[[i]])
+    if (i == 2)
+      multiblock[[i]] <- sqrt(multiblock[[i]])
+    for (j in seq(5)) {
+      hist(multiblock[[i]][, j], main = colnames(multiblock[[i]])[j], xlab = "")
+    }
+}
+par(mfrow = c(1, 1))
+names(multiblock) <- name_subtests
+
+
+path <- file.path("~", "inst", "extdata")
+speed <- data.frame(read_excel(file.path(path, "comportement_tests.xlsx"), sheet = sheet, skip = 2)[, 65])
+# hist(speed)
+colnames(speed) <- "speed"
+row.names(speed) <- paste(data$Donnor, data$Mouse)
+n <- length(multiblock) + 1
+multiblock[[n]] <- speed
+names(multiblock)[n] <- "speed"
+
+behavioral_tests_multiblock <- multiblock
+usethis::use_data(behavioral_tests_multiblock, overwrite = TRUE)
+
+library(openxlsx)
+sheets <- name_subtests
+wb <- createWorkbook()
+for (i in seq_along(sheets)) {
+    addWorksheet(wb, sheets[i])
+    writeData(wb, sheets[i], multiblock[[i]])
+}
+saveWorkbook(wb, file = file.path(path, "multiblock.xlsx"), overwrite = TRUE)
 ```
 
 ```{r end}
