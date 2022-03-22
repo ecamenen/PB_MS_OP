@@ -1,0 +1,325 @@
+---
+title: "AFM"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
+library(tidyr)
+library(FactoMineR)
+library("xlsx")
+library(factoextra)
+library(MASS)
+library(tidyverse)
+library(corrplot)
+data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
+data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
+data$group <- relevel(data$group, ref = "NG")
+data1 <- read.xlsx("/home/baptiste.criniere/Documents/PB_MS_OP/inst/extdata/comportement_tests.xlsx", 1, startRow = 3, header=TRUE, colClasses=NA)
+data1 <- data1[,c("X3.Months.13")]
+data$speed <- data1
+`%ni%` <- Negate(`%in%`)
+```
+
+# Qu'est ce que l'AFM ?
+L'Analyse Factorielle Multiple (AFM) est une méthode d'analyse de données multivariées permettant de résumer et de visualiser un tableau de données complexe, dans lequel les individus sont décrits par plusieurs ensembles de variables (quantitatives et qualitatives) structurés en groupes.
+\
+L'AFM prend en compte la contribution de tous les groupes actifs de variables afin de définir la distance entre les individus. Le nombre de variable dans chaque groupe peut différer et la nature des variables peut varier dans groupe à l'autre, mais les variables doivent être de même nature dans un groupe donné.
+\
+Cette analyse globale, dans laquelle plusieurs ensembles de variables sont considérés simultanément, nécessite d'équilibrer les influences de chaque ensemble de variables. Par conséquent, dans l'AFM, les variables sont pondérées lors de l'analyse. Les variables du même groupe sont normalisées en utilisant la même valeur de pondération, qui peut varier d'un groupe à l'autre. Techniquement, l'AFM attribue à chaque variable du groupe j, un poids égal à l'inverse de la première valeur propre de l'analyse de l'ACP du groupe j.
+\
+\
+L'analyse factorielle multiple peut être utilisée dans de nombreux domaines où les variables sont organisées en groupes.\
+Dans notre cas, on se trouve dans un contexte où un même individu (une souris) est observé à des temps différents. Dans cette situation, il existe deux façons de définir les groupes de variables :
+- On peut rassembler les variables observées au même temps dans un groupe
+- Lorsque les variables sont identiques d'une date à l'autre, chaque ensemble peut rassembler les différentes dates pour une même variable.
+\
+Nous allons appliquer ces deux façons de considérer le problème à nos données.
+
+# AFM 
+On réalise une seconde AFM en regroupant les variables par time point.
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
+# Data management, organisation des données pour la AFM
+# On transforme la variable nb of errors en sqrt car variable de comptage
+data2 <- data %>% mutate(sqrt_nb_of_errors = sqrt(number_of_errors))
+# On transforme la variable time to cross en log
+data2 <- data2 %>% mutate(log_time_to_cross = log(time_to_cross))
+
+data2 <- data2 %>% dplyr::select(-time_ord, -donnor_id, -group, -num_time, -number_of_errors, -time_to_cross, -speed)
+d <- data2 %>% 
+     gather(key, value, -time, -mouse) %>%  
+     unite(new.col, c(key, time)) %>%   
+     spread(new.col, value) 
+
+d <- merge(d, unique(data[,c("mouse", "speed", "group")]), by.x = "mouse", by.y = "mouse")
+row.names(d) <- d$mouse
+d <- d %>% dplyr::select(-mouse)
+d <- d[, c(1,6,11,16,2,7,12,17,3,8,13,18,4,9,14,19,21,5,10,15,20,22)]
+names(d)
+
+# On lance l'AFM
+res.mfa <- MFA(d, 
+               group = c(4, 4, 4, 5, 4, 1), 
+               type = c("s", "s", "s", "s", "s", "n"),
+               name.group = c("1 month", "1 week", "2 months", "3 months", "before-surgery", "group"), num.group.sup = c(6),
+               graph = FALSE)
+```
+
+
+## Pourcentage de variance expliquée par chaque axes
+Les deux premières dimensions permettent d'expliquer 41% de la variance totale de nos données. Le critère du coude semble nous indique de conserver les deux premières dimensions de l'AFM.
+```{r}
+eig.val <- get_eigenvalue(res.mfa)
+head(eig.val)
+fviz_screeplot(res.mfa)
+```
+
+## Groupes de variables
+Le graphique ci-dessous illustre la corrélation entre les groupes et les dimensions. Les coordonnées des 5 groupes actifs (les 5 temps) sur la première dimension sont presque identique. Cela signifie qu'ils contribuent de manière similaire à la première dimension. En ce qui concerne la deuxième dimension, les groupes 1 month, 2 months, 3 months ont des coordonnées beaucoup plus élevée que les groupes before-surgery et 1 week, ce qui signifie qu'ils contribuent davantage sur la deuxième dimension. De plus, on observe que la variable groupe placée en supplémentaire (ce qui signifie qu'elle ne contribue pas à la construction des axes) est fortement corrélée à la deuxième dimension et quasiment pas à la première ; ce qui indique que c'est la deuxième dimension qui permet de discrimer sur le groupe.
+```{r}
+group <- get_mfa_var(res.mfa, "group")
+fviz_mfa_var(res.mfa, "group")
+```
+```{r}
+# Contribution à la première dimension
+fviz_contrib (res.mfa, "group", axes = 1)
+# Contribution à la deuxième dimension
+fviz_contrib (res.mfa, "group", axes = 2)
+```
+
+## Contribution des variables
+Après avoir analysé l'impact des groupes sur chaque dimension. On cherche à savoir au sein de chaque groupe (temps) quelles sont les variables les effets des variables sur les dimensions.
+\
+\
+### Cercle de corrélation
+Le cercle de corrélation ci-dessous montre l'association entre les variables, la qualité de représentation des variables, ainsi que la corrélation entre les variables et les dimensions :
+- les variables corrélées positivement sont regroupées, tandis que celles corrélées négativement sont positionnées sur les côtés opposés de l'origine du graphique.
+- la distance entre les variables et l'orgine mesure la qualité des variables sur le graphique. Plus un point variable est loin de l'origine meilleure est sa représentation.
+- Pour une dimension donnée, les variables les plus corrélées à la dimension sont proches de la dimension.
+\
+\
+```{r}
+# Uniquement avec le top 10
+fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", 
+             col.var.sup = "violet", repel = TRUE, select.var = list(contrib = 10))
+
+# Uniquement avec les variables qui contribuent à l'axe 2
+fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", col.var.sup = "violet", repel = TRUE, select.var = list(name = c("sqrt_nb_of_errors_2 Months", "sqrt_nb_of_errors_3 Months","sqrt_nb_of_errors_1 Month", "front_limb_1 Month","front_limb_2 Months", "front_limb_3 Months", "speed")))
+```
+
+### Contribution des variables
+On représente la contribution de chaque variable à la définition des dimensions 1 puis 2, les variables sont colorées par groupe. La ligne en pointillé rouge sur le graphique indique la valeur moyenne attendue, si les contributions étaient uniformes. Ainsi une variable contribue fortement lorsque sa contribution se situe au dessus de cette ligne. \
+\
+On observe que les variables qui contribuent à la dimension 1 sont :
+- log_time_to_cross 3 months
+- log_time_to_cross 2 months
+- front_limb before surgery
+- sqrt_nb_of_errors before surgery
+- log_time_to_cross before surgery
+- front_limb 1 months
+- sqrt_nb_of_errors 1 week
+- front_limb 2 months
+\
+\
+Les variables qui contribuent à la dimension 2 sont :
+- sqrt_nb_of_errors 2 months
+- sqrt_nb_of_errors 3 months
+- sqrt_nb_of_errors 1 month
+- front_limb 1 month
+- front_limb 3 months
+- speed
+- front_limb 2 months
+```{r}
+# Contributions à la dimension 1
+fviz_contrib (res.mfa, choice = "quanti.var", axes = 1, top = 20,
+             palette = "jco")
+# Contributions à la dimension 2
+fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
+             palette = "jco")
+```
+
+## Graphique des individus
+Les individus ayant des profils similaires sont proches sur le graphique. On observe que les individus du groupe des MS se placent dans la partie supérieure du graphique, tandis que les individus du groupe de HD et NG se placent dans la partie inférieure, de plus on n'arrive pas à distinguer ces deux groupes. Il s'agit donc de la deuxième dimension qui distingue les groupes
+```{r}
+# Extraire le résultat des individus
+ind <- get_mfa_ind(res.mfa)
+```
+
+```{r}
+# Graphique des individus
+fviz_mfa_ind(res.mfa, habillage = "group",
+             palette = c("#00AFBB", "#FC4E07", "#62bd50"),
+             addEllipses = TRUE, ellipse.type = "confidence", 
+             repel = TRUE 
+             )
+```
+
+## Clustering sur les dimensions de l'AFM
+On réalise enfin un apprentissage non supervisé à partir de l'AFM, afin de savoir si on retrouve les groupes auxquels appartiennent les souris.
+\
+On obtient que l'on arrive très bien à repérer les MS seulement un faux positif et 2 faux négatifs, de plus on a du mal à distinguer les HD des NG.
+
+```{r}
+clustering <- HCPC(res.mfa, nb.clust = 3)
+d$clustering <- clustering$data.clust$clust
+table(d$group, d$clustering)
+```
+
+# Modèles mixtes sur le score composite
+Comme vu précédemment, il s'agit de la deuxième composante principale de l'AFM qui permet de distinguer le groupe des MS des deux autres groupes, l'idée va donc être d'utiliser cette deuxième composante comme un score composite qui résume l'information des autres scores.
+```{r}
+# Data management
+ind <- get_mfa_ind(res.mfa)
+a <- ind$coord.partiel
+a <- a[,c(2)]
+a <- as.data.frame(a)
+a <- a %>% rename(Score = a)
+a <- tibble::rownames_to_column(a, "VALUE")
+a$id <- NULL
+a$time <- NULL
+for (i in 1:nrow(a)){
+ a$id[i] <- strsplit(a$VALUE[i], ".", fixed = TRUE)[[1]][1]
+ a$time[i] <- strsplit(a$VALUE[i], ".", fixed = TRUE)[[1]][2]
+}
+a <- a %>% dplyr::select(id, time, Score, -VALUE)
+a$id <- as.factor(a$id)
+
+
+a$time <- factor(a$time, levels = c("before-surgery", "1 week", "1 month", "2 months", "3 months"))
+a <- merge(a, unique(data[,c("mouse", "group")]), by.x = "id", by.y = "mouse")
+a$group <- relevel(a$group, ref = "NG")
+```
+
+## Graphique en trellis
+```{r}
+p1 <- a %>% 
+  ggplot(aes(x = time,
+             y = Score,             
+             group = id)) +
+  geom_point(size = 0.75) +
+  geom_line(
+            alpha = .5,
+            size = 1) +
+  facet_grid(. ~ group)  +
+  theme_bw() +
+  scale_color_manual(values = colors) +
+  scale_x_discrete(labels = c('1','2','3','4','5'))+
+  xlab("Visit") + ylab("Score composite") +
+  theme(strip.text.x = element_text(size=12, face="bold", color ="white"),
+        strip.background = element_rect( fill="gray8"))
+p1
+```
+
+
+## Modélisation
+```{r}
+# Modèle avec le temps en covariable effet aléatoire sur la constante de chaque souris
+mod1 <- lmerTest::lmer(Score ~ time + (1 | id), data = a)
+BIC(mod1)
+AIC(mod1)
+Anova(mod1)
+summary(mod1)
+
+# Modèle avec l'effet d'intéraction temps/groupe en effet fixe
+mod2 <- lmerTest::lmer(Score ~ time*group + (1 | id), data = a)
+BIC(mod2)
+AIC(mod2)
+Anova(mod2)
+summary(mod2)
+```
+
+### Test de modèles emboîtés
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
+anova(mod1, mod2, 
+      model.names = c("RI", "RIAS"),
+      refit = FALSE) %>% 
+  pander::pander(caption = "LRT: Assess Significance of Random Slopes")
+```
+
+### Résumé et comparaison du modèle
+
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
+# Analyse du modèle temporel uniquement
+knitreg(list( mod1, mod2), 
+                single.row = TRUE,
+                caption = "MLM: Random Intercepts Null Model fit w/REML",
+                caption.above = TRUE,  use.packages = FALSE
+                )
+```
+
+
+### Plot en fonction du temps
+
+
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+set_theme(base = theme_bw())
+sjPlot::plot_model(mod2, colors = c("#62bd50", "#00AFBB", "#FC4E07"),
+                   type = "pred",
+                   terms = c("time", "group"), theme = "bw")
+```
+
+### Hypothèses
+On observe que les résidus sont normalement distribués.
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+ggResidpanel::resid_panel(mod2)
+```
+
+
+### Comparaisons post hoc
+```{r , echo=FALSE}
+mod2 %>% 
+  emmeans::emmeans(pairwise ~ time*group,
+                   at = list(age = 13))
+```
+
+## En considérant le temps comme continu
+Afin de tenir compte de l'évolution du score par rapport au temps, on va maintenant faire un modèle où l'on considère le temps comme contiunu.
+
+### Meilleur modèle
+```{r}
+a$num_time <- as.numeric(a$time)
+# Modèle
+mod2 <- lmerTest::lmer(Score ~ num_time*group + (1 | id), data = a)
+BIC(mod2)
+
+mod3 <- lmerTest::lmer(Score ~ num_time*group + (1 + num_time | id), data = a)
+AIC(mod3)
+summary(mod3)
+```
+
+### Test de modèles emboîtés
+
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
+anova(mod2, mod3, 
+      model.names = c("RI", "RIAS"),
+      refit = FALSE) %>% 
+  pander::pander(caption = "LRT: Assess Significance of Random Slopes")
+```
+
+### Résumé et comparaison du modèle
+
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
+# Analyse du modèle temporel uniquement
+knitreg(list(mod1, mod2, mod3), 
+                single.row = TRUE,
+                caption = "MLM: Random Intercepts Null Model fit w/REML",
+                caption.above = TRUE,  use.packages = FALSE
+                )
+```
+### Plot en fonction du temps
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+set_theme(base = theme_bw())
+sjPlot::plot_model(mod3,
+                   type = "pred",
+                   terms = c("num_time", "group"), theme = "bw")
+```
+
+### Hypothèses
+On observe que les résidus sont normalement distribués.
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+ggResidpanel::resid_panel(mod3)
+```
+
