@@ -1,5 +1,5 @@
 ---
-title: "AFM"
+title: "AFM Analyse Factorielle Multiple"
 output: html_document
 ---
 
@@ -52,7 +52,7 @@ Dans notre cas, on se trouve dans un contexte où un même individu (une souris)
 \
 Nous allons appliquer ces deux façons de considérer le problème à nos données.
 
-# AFM 
+# Analyse Factorielle Multiple 
 On réalise une seconde AFM en regroupant les variables par time point.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
 # Data management, organisation des données pour la AFM
@@ -339,5 +339,11 @@ knitreg(list(mod2, mod4),
                 caption = "Comparaison des deux modèles",
                 caption.above = TRUE,  use.packages = FALSE
                 )
+```
+
+# Analyse des individus
+## AFM
+```{r}
+
 ```
 
