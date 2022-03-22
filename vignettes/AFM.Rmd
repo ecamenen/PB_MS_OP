@@ -15,6 +15,19 @@ library(factoextra)
 library(MASS)
 library(tidyverse)
 library(corrplot)
+
+library(ggResidpanel) # To check hypothesis
+library(kableExtra) # To represent table
+
+library(rstatix) # Statistical analysis ANOVA
+library(ggpubr) # Plot results of an ANOVA
+
+library(lmerTest) # Tests on lmer objects
+library(lme4) # Linear, generalized linear, & nonlinear mixed models
+
+library(texreg) # Convert Regression Output to LaTeX or HTML Tables
+library(sjPlot) # ICC calculations
+
 data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
 data$group <- relevel(data$group, ref = "NG")
@@ -71,19 +84,23 @@ res.mfa <- MFA(d,
 
 ## Pourcentage de variance expliquée par chaque axes
 Les deux premières dimensions permettent d'expliquer 41% de la variance totale de nos données. Le critère du coude semble nous indique de conserver les deux premières dimensions de l'AFM.
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 eig.val <- get_eigenvalue(res.mfa)
 head(eig.val)
 fviz_screeplot(res.mfa)
 ```
 
-## Groupes de variables
+## Groupes de variables  {.tabset}
 Le graphique ci-dessous illustre la corrélation entre les groupes et les dimensions. Les coordonnées des 5 groupes actifs (les 5 temps) sur la première dimension sont presque identique. Cela signifie qu'ils contribuent de manière similaire à la première dimension. En ce qui concerne la deuxième dimension, les groupes 1 month, 2 months, 3 months ont des coordonnées beaucoup plus élevée que les groupes before-surgery et 1 week, ce qui signifie qu'ils contribuent davantage sur la deuxième dimension. De plus, on observe que la variable groupe placée en supplémentaire (ce qui signifie qu'elle ne contribue pas à la construction des axes) est fortement corrélée à la deuxième dimension et quasiment pas à la première ; ce qui indique que c'est la deuxième dimension qui permet de discrimer sur le groupe.
-```{r}
+
+### Visualisation des groupes
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 group <- get_mfa_var(res.mfa, "group")
 fviz_mfa_var(res.mfa, "group")
 ```
-```{r}
+
+### Contribution dimension 1 & 2
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, figures-side, fig.show="hold", out.width="50%"}
 # Contribution à la première dimension
 fviz_contrib (res.mfa, "group", axes = 1)
 # Contribution à la deuxième dimension
@@ -93,27 +110,36 @@ fviz_contrib (res.mfa, "group", axes = 2)
 ## Contribution des variables
 Après avoir analysé l'impact des groupes sur chaque dimension. On cherche à savoir au sein de chaque groupe (temps) quelles sont les variables les effets des variables sur les dimensions.
 \
-\
-### Cercle de corrélation
+
+### Cercle de corrélation {.tabset}
 Le cercle de corrélation ci-dessous montre l'association entre les variables, la qualité de représentation des variables, ainsi que la corrélation entre les variables et les dimensions :
 - les variables corrélées positivement sont regroupées, tandis que celles corrélées négativement sont positionnées sur les côtés opposés de l'origine du graphique.
 - la distance entre les variables et l'orgine mesure la qualité des variables sur le graphique. Plus un point variable est loin de l'origine meilleure est sa représentation.
 - Pour une dimension donnée, les variables les plus corrélées à la dimension sont proches de la dimension.
 \
-\
-```{r}
+
+#### Top 10 variables
+On représente le cercle de corrélation pour les deux premières dimensions, en représentant uniquement les 10 variables qui contribuent le plus à la construction des deux premières dimensions.
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Uniquement avec le top 10
 fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", 
              col.var.sup = "violet", repel = TRUE, select.var = list(contrib = 10))
 
-# Uniquement avec les variables qui contribuent à l'axe 2
+```
+
+#### Variables qui contribuent à l'axe 2
+On représente le cercle de corrélation pour les deux premières dimensions, en représentant uniquement les variables qui contribuent à la construction de la deuxième dimension.
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", col.var.sup = "violet", repel = TRUE, select.var = list(name = c("sqrt_nb_of_errors_2 Months", "sqrt_nb_of_errors_3 Months","sqrt_nb_of_errors_1 Month", "front_limb_1 Month","front_limb_2 Months", "front_limb_3 Months", "speed")))
 ```
 
-### Contribution des variables
+
+### Contribution des variables {.tabset}
 On représente la contribution de chaque variable à la définition des dimensions 1 puis 2, les variables sont colorées par groupe. La ligne en pointillé rouge sur le graphique indique la valeur moyenne attendue, si les contributions étaient uniformes. Ainsi une variable contribue fortement lorsque sa contribution se situe au dessus de cette ligne. \
-\
+
+#### Dimension 1
 On observe que les variables qui contribuent à la dimension 1 sont :
+
 - log_time_to_cross 3 months
 - log_time_to_cross 2 months
 - front_limb before surgery
@@ -122,9 +148,16 @@ On observe que les variables qui contribuent à la dimension 1 sont :
 - front_limb 1 months
 - sqrt_nb_of_errors 1 week
 - front_limb 2 months
-\
-\
+
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+# Contributions à la dimension 2
+fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
+             palette = "jco")
+```
+
+#### Dimension 2
 Les variables qui contribuent à la dimension 2 sont :
+
 - sqrt_nb_of_errors 2 months
 - sqrt_nb_of_errors 3 months
 - sqrt_nb_of_errors 1 month
@@ -132,10 +165,8 @@ Les variables qui contribuent à la dimension 2 sont :
 - front_limb 3 months
 - speed
 - front_limb 2 months
-```{r}
-# Contributions à la dimension 1
-fviz_contrib (res.mfa, choice = "quanti.var", axes = 1, top = 20,
-             palette = "jco")
+
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Contributions à la dimension 2
 fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
              palette = "jco")
@@ -143,12 +174,12 @@ fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
 
 ## Graphique des individus
 Les individus ayant des profils similaires sont proches sur le graphique. On observe que les individus du groupe des MS se placent dans la partie supérieure du graphique, tandis que les individus du groupe de HD et NG se placent dans la partie inférieure, de plus on n'arrive pas à distinguer ces deux groupes. Il s'agit donc de la deuxième dimension qui distingue les groupes
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Extraire le résultat des individus
 ind <- get_mfa_ind(res.mfa)
 ```
 
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Graphique des individus
 fviz_mfa_ind(res.mfa, habillage = "group",
              palette = c("#00AFBB", "#FC4E07", "#62bd50"),
@@ -157,20 +188,41 @@ fviz_mfa_ind(res.mfa, habillage = "group",
              )
 ```
 
-## Clustering sur les dimensions de l'AFM
+## Clustering sur les dimensions de l'AFM {.tabset}
 On réalise enfin un apprentissage non supervisé à partir de l'AFM, afin de savoir si on retrouve les groupes auxquels appartiennent les souris.
 \
 On obtient que l'on arrive très bien à repérer les MS seulement un faux positif et 2 faux négatifs, de plus on a du mal à distinguer les HD des NG.
 
-```{r}
-clustering <- HCPC(res.mfa, nb.clust = 3)
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+clustering <- HCPC(res.mfa, nb.clust = 3, graph = F)
 d$clustering <- clustering$data.clust$clust
 table(d$group, d$clustering)
 ```
 
+### Dendogramme
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+fviz_dend(clustering)
+```
+
+### Clustering 3D
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+plot(clustering, choice = "3D.map")
+```
+
+### CLustering
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+fviz_cluster(clustering,
+             repel = TRUE,            # Evite le chevauchement des textes
+             show.clust.cent = TRUE, # Montre le centre des clusters
+             palette = c("#00AFBB", "#FC4E07", "#62bd50"),         # Palette de couleurs, voir ?ggpubr::ggpar
+             ggtheme = theme_minimal(),
+             main = "Factor map"
+             )
+```
+
 # Modèles mixtes sur le score composite
 Comme vu précédemment, il s'agit de la deuxième composante principale de l'AFM qui permet de distinguer le groupe des MS des deux autres groupes, l'idée va donc être d'utiliser cette deuxième composante comme un score composite qui résume l'information des autres scores.
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Data management
 ind <- get_mfa_ind(res.mfa)
 a <- ind$coord.partiel
@@ -194,7 +246,7 @@ a$group <- relevel(a$group, ref = "NG")
 ```
 
 ## Graphique en trellis
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 p1 <- a %>% 
   ggplot(aes(x = time,
              y = Score,             
@@ -214,45 +266,34 @@ p1
 ```
 
 
-## Modélisation
-```{r}
+## Modélisation {.tabset}
+### Temps discret
+
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Modèle avec le temps en covariable effet aléatoire sur la constante de chaque souris
 mod1 <- lmerTest::lmer(Score ~ time + (1 | id), data = a)
 BIC(mod1)
 AIC(mod1)
 Anova(mod1)
-summary(mod1)
 
 # Modèle avec l'effet d'intéraction temps/groupe en effet fixe
 mod2 <- lmerTest::lmer(Score ~ time*group + (1 | id), data = a)
-BIC(mod2)
-AIC(mod2)
-Anova(mod2)
-summary(mod2)
-```
 
-### Test de modèles emboîtés
-```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
+
+# Tests de modèle emboîtés
 anova(mod1, mod2, 
       model.names = c("RI", "RIAS"),
       refit = FALSE) %>% 
   pander::pander(caption = "LRT: Assess Significance of Random Slopes")
+
+# Hypothèse
+# ggResidpanel::resid_panel(mod2)
+
+# Comparaisons post hoc
+mod2 %>% 
+  emmeans::emmeans(pairwise ~ time*group,
+                   at = list(age = 13))
 ```
-
-### Résumé et comparaison du modèle
-
-```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
-# Analyse du modèle temporel uniquement
-knitreg(list( mod1, mod2), 
-                single.row = TRUE,
-                caption = "MLM: Random Intercepts Null Model fit w/REML",
-                caption.above = TRUE,  use.packages = FALSE
-                )
-```
-
-
-### Plot en fonction du temps
-
 
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 set_theme(base = theme_bw())
@@ -261,65 +302,42 @@ sjPlot::plot_model(mod2, colors = c("#62bd50", "#00AFBB", "#FC4E07"),
                    terms = c("time", "group"), theme = "bw")
 ```
 
-### Hypothèses
-On observe que les résidus sont normalement distribués.
-```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
-ggResidpanel::resid_panel(mod2)
-```
-
-
-### Comparaisons post hoc
-```{r , echo=FALSE}
-mod2 %>% 
-  emmeans::emmeans(pairwise ~ time*group,
-                   at = list(age = 13))
-```
-
-## En considérant le temps comme continu
-Afin de tenir compte de l'évolution du score par rapport au temps, on va maintenant faire un modèle où l'on considère le temps comme contiunu.
-
-### Meilleur modèle
-```{r}
+### Temps comme continu
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 a$num_time <- as.numeric(a$time)
 # Modèle
-mod2 <- lmerTest::lmer(Score ~ num_time*group + (1 | id), data = a)
+mod3 <- lmerTest::lmer(Score ~ num_time*group + (1 | id), data = a)
 BIC(mod2)
 
-mod3 <- lmerTest::lmer(Score ~ num_time*group + (1 + num_time | id), data = a)
+mod4 <- lmerTest::lmer(Score ~ num_time*group + (1 + num_time | id), data = a)
 AIC(mod3)
 summary(mod3)
-```
 
-### Test de modèles emboîtés
-
-```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
-anova(mod2, mod3, 
+# Test de modèles emboîtés
+anova(mod3, mod4, 
       model.names = c("RI", "RIAS"),
       refit = FALSE) %>% 
   pander::pander(caption = "LRT: Assess Significance of Random Slopes")
+
+# Hypothèse
+# ggResidpanel::resid_panel(mod3)
+
 ```
 
-### Résumé et comparaison du modèle
-
-```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
-# Analyse du modèle temporel uniquement
-knitreg(list(mod1, mod2, mod3), 
-                single.row = TRUE,
-                caption = "MLM: Random Intercepts Null Model fit w/REML",
-                caption.above = TRUE,  use.packages = FALSE
-                )
-```
-### Plot en fonction du temps
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 set_theme(base = theme_bw())
-sjPlot::plot_model(mod3,
-                   type = "pred",
+sjPlot::plot_model(mod4,
+                   type = "pred", colors = c("#62bd50", "#00AFBB", "#FC4E07"),
                    terms = c("num_time", "group"), theme = "bw")
 ```
 
-### Hypothèses
-On observe que les résidus sont normalement distribués.
-```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
-ggResidpanel::resid_panel(mod3)
+### Résumé et comparaison des modèles
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
+# Analyse du modèle temporel uniquement
+knitreg(list(mod2, mod4), 
+                single.row = TRUE,
+                caption = "Comparaison des deux modèles",
+                caption.above = TRUE,  use.packages = FALSE
+                )
 ```
 
