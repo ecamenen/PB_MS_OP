@@ -1,6 +1,8 @@
 ---
 title: "AFM Analyse Factorielle Multiple"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -38,7 +40,7 @@ data$speed <- data1
 ```
 
 # Qu'est ce que l'AFM ?
-L'Analyse Factorielle Multiple (AFM) est une méthode d'analyse de données multivariées permettant de résumer et de visualiser un tableau de données complexe, dans lequel les individus sont décrits par plusieurs ensembles de variables (quantitatives et qualitatives) structurés en groupes.
+L'Analyse Factorielle Multiple (AFM) est une méthode d'analyse de données multivariées qui permet de résumer et de visualiser un jeu de données complexe, dans lequel les individus sont décrits par beaucoup de variables structurés en groupes.
 \
 L'AFM prend en compte la contribution de tous les groupes actifs de variables afin de définir la distance entre les individus. Le nombre de variable dans chaque groupe peut différer et la nature des variables peut varier dans groupe à l'autre, mais les variables doivent être de même nature dans un groupe donné.
 \
@@ -47,13 +49,14 @@ Cette analyse globale, dans laquelle plusieurs ensembles de variables sont consi
 \
 L'analyse factorielle multiple peut être utilisée dans de nombreux domaines où les variables sont organisées en groupes.\
 Dans notre cas, on se trouve dans un contexte où un même individu (une souris) est observé à des temps différents. Dans cette situation, il existe deux façons de définir les groupes de variables :
-- On peut rassembler les variables observées au même temps dans un groupe
+\
+- On peut rassembler les variables observées au même temps dans un groupe.
+\
 - Lorsque les variables sont identiques d'une date à l'autre, chaque ensemble peut rassembler les différentes dates pour une même variable.
 \
-Nous allons appliquer ces deux façons de considérer le problème à nos données.
+Nous allons appliquer la première méthode dans laquelle les variables observées sont regroupées par temps.
 
 # Analyse Factorielle Multiple 
-On réalise une seconde AFM en regroupant les variables par time point.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
 # Data management, organisation des données pour la AFM
 # On transforme la variable nb of errors en sqrt car variable de comptage
@@ -67,17 +70,17 @@ d <- data2 %>%
      unite(new.col, c(key, time)) %>%   
      spread(new.col, value) 
 
-d <- merge(d, unique(data[,c("mouse", "speed", "group")]), by.x = "mouse", by.y = "mouse")
+d <- merge(d, unique(data[,c("mouse", "speed", "group", "donnor_id")]), by.x = "mouse", by.y = "mouse")
 row.names(d) <- d$mouse
 d <- d %>% dplyr::select(-mouse)
-d <- d[, c(1,6,11,16,2,7,12,17,3,8,13,18,4,9,14,19,21,5,10,15,20,22)]
+d <- d[, c(1,6,11,16,2,7,12,17,3,8,13,18,4,9,14,19,21,5,10,15,20,22,23)]
 names(d)
 
 # On lance l'AFM
 res.mfa <- MFA(d, 
-               group = c(4, 4, 4, 5, 4, 1), 
-               type = c("s", "s", "s", "s", "s", "n"),
-               name.group = c("1 month", "1 week", "2 months", "3 months", "before-surgery", "group"), num.group.sup = c(6),
+               group = c(4, 4, 4, 5, 4, 1, 1), 
+               type = c("s", "s", "s", "s", "s", "n", "n"),
+               name.group = c("1 month", "1 week", "2 months", "3 months", "before-surgery", "group", "donnor"), num.group.sup = c(6, 7),
                graph = FALSE)
 ```
 
@@ -91,7 +94,7 @@ fviz_screeplot(res.mfa)
 ```
 
 ## Groupes de variables  {.tabset}
-Le graphique ci-dessous illustre la corrélation entre les groupes et les dimensions. Les coordonnées des 5 groupes actifs (les 5 temps) sur la première dimension sont presque identique. Cela signifie qu'ils contribuent de manière similaire à la première dimension. En ce qui concerne la deuxième dimension, les groupes 1 month, 2 months, 3 months ont des coordonnées beaucoup plus élevée que les groupes before-surgery et 1 week, ce qui signifie qu'ils contribuent davantage sur la deuxième dimension. De plus, on observe que la variable groupe placée en supplémentaire (ce qui signifie qu'elle ne contribue pas à la construction des axes) est fortement corrélée à la deuxième dimension et quasiment pas à la première ; ce qui indique que c'est la deuxième dimension qui permet de discrimer sur le groupe.
+Le graphique ci-dessous illustre la corrélation entre les groupes et les dimensions. Les coordonnées des 5 groupes actifs (les 5 temps) sur la première dimension sont presque identiques. Cela signifie qu'ils contribuent de manière similaire à la première dimension. En ce qui concerne la deuxième dimension, les groupes 1 month, 2 months, 3 months ont des coordonnées beaucoup plus élevée que les groupes before-surgery et 1 week, ce qui signifie qu'ils contribuent davantage sur la deuxième dimension. De plus, on observe que la variable groupe placée en supplémentaire (ce qui signifie qu'elle ne contribue pas à la construction des axes) est fortement corrélée à la deuxième dimension et quasiment pas à la première ; ce qui indique que c'est la deuxième dimension qui permet de discrimer sur le groupe.
 
 ### Visualisation des groupes
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
@@ -118,6 +121,22 @@ Le cercle de corrélation ci-dessous montre l'association entre les variables, l
 - Pour une dimension donnée, les variables les plus corrélées à la dimension sont proches de la dimension.
 \
 
+#### Variables qui contribuent à l'axe 2
+On représente le cercle de corrélation pour les deux premières dimensions, en représentant uniquement les variables qui contribuent à la construction de la deuxième dimension.
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+# p <- fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", col.var.sup = "violet", repel = TRUE, select.var = list(name = c("sqrt_nb_of_errors_2 Months", "sqrt_nb_of_errors_3 Months","sqrt_nb_of_errors_1 Month", "front_limb_1 Month","front_limb_2 Months", "front_limb_3 Months", "speed")))
+res.mfa1 <- res.mfa
+rownames(res.mfa1$quanti.var$coord)[4] <- "Nb. of errors"
+rownames(res.mfa1$quanti.var$coord)[12] <- "Nb. of errors "
+rownames(res.mfa1$quanti.var$coord)[16] <- "Nb. of errors  "
+rownames(res.mfa1$quanti.var$coord)[2] <- "Front limb"
+rownames(res.mfa1$quanti.var$coord)[10] <- "Front limb "
+rownames(res.mfa1$quanti.var$coord)[14] <- "Front limb  "
+p <- fviz_mfa_var(res.mfa1, "quanti.var", palette = "jco", col.var.sup = "violet", repel = TRUE, select.var = list(name = c("Nb. of errors","Nb. of errors ", "Nb. of errors  ", "Front limb",  "Front limb ",  "Front limb  ", "speed")))
+p
+```
+
+
 #### Top 10 variables
 On représente le cercle de corrélation pour les deux premières dimensions, en représentant uniquement les 10 variables qui contribuent le plus à la construction des deux premières dimensions.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
@@ -127,15 +146,28 @@ fviz_mfa_var(res.mfa, "quanti.var", palette = "jco",
 
 ```
 
-#### Variables qui contribuent à l'axe 2
-On représente le cercle de corrélation pour les deux premières dimensions, en représentant uniquement les variables qui contribuent à la construction de la deuxième dimension.
-```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
-fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", col.var.sup = "violet", repel = TRUE, select.var = list(name = c("sqrt_nb_of_errors_2 Months", "sqrt_nb_of_errors_3 Months","sqrt_nb_of_errors_1 Month", "front_limb_1 Month","front_limb_2 Months", "front_limb_3 Months", "speed")))
-```
+
 
 
 ### Contribution des variables {.tabset}
 On représente la contribution de chaque variable à la définition des dimensions 1 puis 2, les variables sont colorées par groupe. La ligne en pointillé rouge sur le graphique indique la valeur moyenne attendue, si les contributions étaient uniformes. Ainsi une variable contribue fortement lorsque sa contribution se situe au dessus de cette ligne. \
+
+#### Dimension 2
+Les variables qui contribuent à la dimension 2 sont :
+
+- sqrt_nb_of_errors 2 months
+- sqrt_nb_of_errors 3 months
+- sqrt_nb_of_errors 1 month
+- front_limb 1 month
+- front_limb 3 months
+- speed
+- front_limb 2 months
+
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+# Contributions à la dimension 2
+fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
+             palette = "jco")
+```
 
 #### Dimension 1
 On observe que les variables qui contribuent à la dimension 1 sont :
@@ -155,34 +187,35 @@ fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
              palette = "jco")
 ```
 
-#### Dimension 2
-Les variables qui contribuent à la dimension 2 sont :
 
-- sqrt_nb_of_errors 2 months
-- sqrt_nb_of_errors 3 months
-- sqrt_nb_of_errors 1 month
-- front_limb 1 month
-- front_limb 3 months
-- speed
-- front_limb 2 months
 
-```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
-# Contributions à la dimension 2
-fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
-             palette = "jco")
-```
-
-## Graphique des individus
+## Graphique des individus {.tabset}
 Les individus ayant des profils similaires sont proches sur le graphique. On observe que les individus du groupe des MS se placent dans la partie supérieure du graphique, tandis que les individus du groupe de HD et NG se placent dans la partie inférieure, de plus on n'arrive pas à distinguer ces deux groupes. Il s'agit donc de la deuxième dimension qui distingue les groupes
+
+### Affichage du groupe
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Extraire le résultat des individus
-ind <- get_mfa_ind(res.mfa)
+d1 <- d %>% dplyr::select(-donnor_id)
+res.mfa1 <- MFA(d1, 
+               group = c(4, 4, 4, 5, 4, 1), 
+               type = c("s", "s", "s", "s", "s", "n"),
+               name.group = c("1 month", "1 week", "2 months", "3 months", "before-surgery", "group"), num.group.sup = c(6),
+               graph = FALSE)
+
+ind1 <- get_mfa_ind(res.mfa1)
+fviz_mfa_ind(res.mfa1, geom = "point", habillage = "group", shape = "group",
+             palette = c("#0b9a64", "#d1146e", "#077e97"),
+             addEllipses = TRUE, ellipse.type = "confidence", 
+             repel = TRUE
+             )
 ```
 
+### Affichage du donneur
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Graphique des individus
-fviz_mfa_ind(res.mfa, habillage = "group",
-             palette = c("#00AFBB", "#FC4E07", "#62bd50"),
+
+fviz_mfa_ind(res.mfa, habillage = "donnor_id",
+             palette = "jco",
              addEllipses = TRUE, ellipse.type = "confidence", 
              repel = TRUE 
              )
@@ -241,12 +274,12 @@ a$id <- as.factor(a$id)
 
 
 a$time <- factor(a$time, levels = c("before-surgery", "1 week", "1 month", "2 months", "3 months"))
-a <- merge(a, unique(data[,c("mouse", "group")]), by.x = "id", by.y = "mouse")
+a <- merge(a, unique(data[,c("mouse", "group", "donnor_id")]), by.x = "id", by.y = "mouse")
 a$group <- relevel(a$group, ref = "NG")
 ```
 
 ## Graphique en trellis
-```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
+```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center", fig.width= 10}
 p1 <- a %>% 
   ggplot(aes(x = time,
              y = Score,             
@@ -259,16 +292,18 @@ p1 <- a %>%
   theme_bw() +
   scale_color_manual(values = colors) +
   scale_x_discrete(labels = c('1','2','3','4','5'))+
-  xlab("Visit") + ylab("Score composite") +
-  theme(strip.text.x = element_text(size=12, face="bold", color ="white"),
+  xlab("Visit") + ylab("Composite Score") +
+  theme(strip.text.x = element_text(size = 12, face="bold", color ="white"),
         strip.background = element_rect( fill="gray8"))
 p1
 ```
 
 
 ## Modélisation {.tabset}
-### Temps discret
+On cherche à modéliser l'effet du groupe et du temps sur ce score composite. On a construit un premier modèle où l'on considère le temps comme discret, ce modèle permet de comparer à chaque time point la différence entre les groupes, mais aussi de comparer pour chaque groupe les différences entre les time points. On a construit un second modèle où l'on considère le temps comme continu, ce modèle permet d'analyser l'effet globale du temps et du groupe sur le score composite.
 
+### Temps discret
+Effet significatif du temps et du groupe sur le score composite.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Modèle avec le temps en covariable effet aléatoire sur la constante de chaque souris
 mod1 <- lmerTest::lmer(Score ~ time + (1 | id), data = a)
@@ -297,12 +332,13 @@ mod2 %>%
 
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 set_theme(base = theme_bw())
-sjPlot::plot_model(mod2, colors = c("#62bd50", "#00AFBB", "#FC4E07"),
+sjPlot::plot_model(mod2, colors =  c("#077e97", "#0b9a64", "#d1146e"),
                    type = "pred",
                    terms = c("time", "group"), theme = "bw")
 ```
 
 ### Temps comme continu
+Effet significatif du temps et du groupe sur le score composite.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 a$num_time <- as.numeric(a$time)
 # Modèle
@@ -326,9 +362,10 @@ anova(mod3, mod4,
 
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 set_theme(base = theme_bw())
-sjPlot::plot_model(mod4,
-                   type = "pred", colors = c("#62bd50", "#00AFBB", "#FC4E07"),
+p <- sjPlot::plot_model(mod4,
+                   type = "pred", colors =  c("#077e97", "#0b9a64", "#d1146e"),
                    terms = c("num_time", "group"), theme = "bw")
+p + xlab("time")
 ```
 
 ### Résumé et comparaison des modèles
@@ -341,9 +378,84 @@ knitreg(list(mod2, mod4),
                 )
 ```
 
-# Analyse des individus
-## AFM
-```{r}
+# Analyse des individus {.tabset}
+## Before surgery
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+data3 <- a %>% dplyr::filter(time == "before-surgery")
+data3 <- data3 %>% mutate(Score = round(Score, 4))
+p <- data3 %>% ggplot(aes(x = group, y = Score))+
+  geom_boxplot()+
+  geom_jitter()+
+  theme_classic()
+l <- plotly::ggplotly(p)
 
+l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
+                               "Donnor:", data3$donnor_id , "<br>",
+                           "Mouse:", data3$id)
+htmltools::tagList(l)
+```
+
+## 1 Week
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+data3 <- a %>% dplyr::filter(time == "1 week")
+data3 <- data3 %>% mutate(Score = round(Score, 4))
+p <- data3 %>% ggplot(aes(x = group, y = Score))+
+  geom_boxplot()+
+  geom_jitter()+
+  theme_classic()
+l <- plotly::ggplotly(p)
+
+l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
+                               "Donnor:", data3$donnor_id , "<br>",
+                           "Mouse:", data3$id)
+htmltools::tagList(l)
+```
+
+## 1 Month
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+data3 <- a %>% dplyr::filter(time == "1 month")
+data3 <- data3 %>% mutate(Score = round(Score, 4))
+p <- data3 %>% ggplot(aes(x = group, y = Score))+
+  geom_boxplot()+
+  geom_jitter()+
+  theme_classic()
+l <- plotly::ggplotly(p)
+
+l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
+                               "Donnor:", data3$donnor_id , "<br>",
+                           "Mouse:", data3$id)
+htmltools::tagList(l)
+```
+
+## 2 Months
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+data3 <- a %>% dplyr::filter(time == "2 months")
+data3 <- data3 %>% mutate(Score = round(Score, 4))
+p <- data3 %>% ggplot(aes(x = group, y = Score))+
+  geom_boxplot()+
+  geom_jitter()+
+  theme_classic()
+l <- plotly::ggplotly(p)
+
+l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
+                               "Donnor:", data3$donnor_id , "<br>",
+                           "Mouse:", data3$id)
+htmltools::tagList(l)
+```
+
+## 3 Months
+```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
+data3 <- a %>% dplyr::filter(time == "3 months")
+data3 <- data3 %>% mutate(Score = round(Score, 4))
+p <- data3 %>% ggplot(aes(x = group, y = Score))+
+  geom_boxplot()+
+  geom_jitter()+
+  theme_classic()
+l <- plotly::ggplotly(p)
+
+l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
+                               "Donnor:", data3$donnor_id , "<br>",
+                           "Mouse:", data3$id)
+htmltools::tagList(l)
 ```
 
