@@ -29,6 +29,7 @@ Imports:
     MASS,
     mixOmics,
     modelr,
+    openxlsx,
     pander,
     readxl,
     reshape2,

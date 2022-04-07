@@ -1,6 +1,9 @@
 ---
 title: "parsing"
-output: rmarkdown::html_vignette
+output:
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
 vignette: >
   %\VignetteIndexEntry{parsing}
   %\VignetteEngine{knitr::rmarkdown}
@@ -18,19 +21,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-load_libraries <- function(librairies) {
-    for (l in librairies) {
-        suppressPackageStartupMessages(
-            library(
-                l,
-                character.only = TRUE,
-                warn.conflicts = FALSE,
-                quietly = TRUE,
-                verbose = FALSE
-            )
-        )
-    }
-}
+library(perrot)
 load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "openxlsx", "perrot", "readxl", "reshape2", "wesanderson"))
 ```
 
@@ -431,7 +422,6 @@ names(multiblock)[n] <- "speed"
 behavioral_tests_multiblock <- multiblock
 usethis::use_data(behavioral_tests_multiblock, overwrite = TRUE)
 
-library(openxlsx)
 sheets <- name_subtests
 wb <- createWorkbook()
 for (i in seq_along(sheets)) {

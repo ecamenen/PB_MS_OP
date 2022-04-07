@@ -1,12 +1,20 @@
 ---
 title: "AFM Analyse Factorielle Multiple"
 output:
-  word_document: default
-  html_document: default
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
+vignette: >
+  %\VignetteIndexEntry{Multiblock analysis: MFA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
 ```
 
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
@@ -28,6 +36,8 @@ library(lme4) # Linear, generalized linear, & nonlinear mixed models
 
 library(texreg) # Convert Regression Output to LaTeX or HTML Tables
 library(sjPlot) # ICC calculations
+
+library(perrot)
 ```
 
 # Qu'est ce que l'AFM ?
@@ -68,7 +78,7 @@ group <- gsub("(\\w{2,3}).*", "\\1", Y)
 donnor <- gsub("(\\w{2,3} \\d).*", "\\1", Y)
 
 times <- c("before-surgery", "1 month", "1 week", "2 months", "3 months")
-names(d) <- times
+names(blocks) <- times
 
 d <- Reduce(cbind, blocks)
 d <- cbind(d, group, donnor)
@@ -278,7 +288,7 @@ On réalise enfin un apprentissage non supervisé à partir de l'AFM, afin de sa
 On obtient que l'on arrive très bien à repérer les MS seulement un faux positif et 2 faux négatifs, de plus on a du mal à distinguer les HD des NG.
 
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
-clustering <- HCPC(res.mfa, nb.clust = 3, graph = F)
+clustering <- HCPC(res.mfa, nb.clust = 3, graph = FALSE)
 d$clustering <- clustering$data.clust$clust
 table(d$group, d$clustering)
 ```
@@ -539,3 +549,6 @@ l[[1]]$data[[2]]$text <- paste(
 htmltools::tagList(l)
 ```
 
+```{r end}
+sessionInfo()
+```

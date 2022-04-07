@@ -1,6 +1,9 @@
 ---
 title: "Multiblock analysis: mixOmics"
-output: rmarkdown::html_vignette
+output:
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
 vignette: >
   %\VignetteIndexEntry{Multiblock analysis: mixOmics}
   %\VignetteEngine{knitr::rmarkdown}
@@ -130,12 +133,14 @@ circosPlot(
     size.variables = 0.75
 )
 
+tiff("data/mixomics_clustering.tiff", units = "px", width = 2000, height = 2000, res = 300)
 cimDiablo(
     model,
     comp = 1:2 # ,
     # legend.position = "topright",
     # margins = c(7, 20)
 )
+dev.off()
 ```
 
 ```{r perf}

@@ -1,6 +1,9 @@
 ---
 title: "multiblock_rgcca"
-output: rmarkdown::html_vignette
+output:
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
 vignette: >
   %\VignetteIndexEntry{multiblock_rgcca}
   %\VignetteEngine{knitr::rmarkdown}
@@ -15,12 +18,8 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
-library("mixOmics")
-library("readxl")
-library("RGCCA")
-library(corrplot)
-library(FactoMineR)
 library(perrot)
+load_libraries(c("readxl", "RGCCA", "corrplot", "FactoMineR", "factoextra"))
 ```
 
 ```{r data}

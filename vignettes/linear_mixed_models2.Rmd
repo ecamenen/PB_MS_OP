@@ -1,6 +1,9 @@
 ---
 title: "Linear Mixed Models V2"
-output: rmarkdown::html_vignette
+output:
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
 vignette: >
   %\VignetteIndexEntry{Linear Mixed Models V2}
   %\VignetteEngine{knitr::rmarkdown}

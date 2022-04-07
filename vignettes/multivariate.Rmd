@@ -1,6 +1,9 @@
 ---
 title: "Multivariate Analysis"
-output: rmarkdown::html_vignette
+output:
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
 vignette: >
   %\VignetteIndexEntry{Multivariate Analysis}
   %\VignetteEngine{knitr::rmarkdown}
@@ -12,12 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(FactoMineR)
-library(factoextra)
-library(MASS)
-library(tidyverse)
-library(corrplot)
 library(perrot)
+load_libraries(c("FactoMineR", "factoextra", "MASS", "tidyverse", "corrplot"))
 data(behavioral_tests_no_replicates_median)
 data <- behavioral_tests_no_replicates_median
 data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
