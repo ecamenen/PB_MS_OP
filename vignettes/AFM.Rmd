@@ -51,7 +51,15 @@ Nous allons appliquer la première méthode dans laquelle les variables observé
 ```{r}
 # Convert in time blocks
 data(behavioral_tests_multiblock)
-blocks <- lapply(seq(5), function(i) sapply(behavioral_tests_multiblock[-5], function(j) j[, i]))
+blocks <- lapply(
+    seq(5),
+    function(i) {
+        sapply(
+            behavioral_tests_multiblock[-5],
+            function(j) j[, i]
+        )
+    }
+)
 blocks[[5]] <- cbind(blocks[[5]], behavioral_tests_multiblock[[5]])
 
 
@@ -68,11 +76,14 @@ d <- cbind(d, group, donnor)
 
 ```{r}
 # On lance l'AFM
-res.mfa <- MFA(d, 
-               group = c(4, 4, 4, 4, 5, 1, 1), 
-               type = c("s", "s", "s", "s", "s", "n", "n"),
-               name.group = c(times, "group", "donnor"), num.group.sup = c(6, 7),
-               graph = FALSE)
+res.mfa <- MFA(
+    d,
+    group = c(4, 4, 4, 4, 5, 1, 1),
+    type = c("s", "s", "s", "s", "s", "n", "n"),
+    name.group = c(times, "group", "donnor"),
+    num.group.sup = c(6, 7),
+    graph = FALSE
+)
 ```
 
 ## Pourcentage de variance expliquée par chaque axes
@@ -95,9 +106,9 @@ fviz_mfa_var(res.mfa, "group")
 ### Contribution dimension 1 & 2
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, figures-side, fig.show="hold", out.width="50%"}
 # Contribution à la première dimension
-fviz_contrib (res.mfa, "group", axes = 1)
+fviz_contrib(res.mfa, "group", axes = 1)
 # Contribution à la deuxième dimension
-fviz_contrib (res.mfa, "group", axes = 2)
+fviz_contrib(res.mfa, "group", axes = 2)
 ```
 
 ## Contribution des variables
@@ -122,7 +133,24 @@ rownames(res.mfa1$quanti.var$coord)[16] <- "Nb. of errors  "
 rownames(res.mfa1$quanti.var$coord)[2] <- "Front limb"
 rownames(res.mfa1$quanti.var$coord)[10] <- "Front limb "
 rownames(res.mfa1$quanti.var$coord)[14] <- "Front limb  "
-p <- fviz_mfa_var(res.mfa1, "quanti.var", palette = "jco", col.var.sup = "violet", repel = TRUE, select.var = list(name = c("Nb. of errors","Nb. of errors ", "Nb. of errors  ", "Front limb",  "Front limb ",  "Front limb  ", "speed")))
+p <- fviz_mfa_var(
+    res.mfa1,
+    "quanti.var",
+    palette = "jco",
+    col.var.sup = "violet",
+    repel = TRUE,
+    select.var = list(
+        name = c(
+            "Nb. of errors",
+            "Nb. of errors ",
+            "Nb. of errors  ",
+            "Front limb",
+            "Front limb ",
+            "Front limb  ",
+            "speed"
+        )
+    )
+)
 p
 ```
 
@@ -131,9 +159,14 @@ p
 On représente le cercle de corrélation pour les deux premières dimensions, en représentant uniquement les 10 variables qui contribuent le plus à la construction des deux premières dimensions.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Uniquement avec le top 10
-fviz_mfa_var(res.mfa, "quanti.var", palette = "jco", 
-             col.var.sup = "violet", repel = TRUE, select.var = list(contrib = 10))
-
+fviz_mfa_var(
+    res.mfa,
+    "quanti.var",
+    palette = "jco",
+    col.var.sup = "violet",
+    repel = TRUE,
+    select.var = list(contrib = 10)
+)
 ```
 
 
@@ -155,8 +188,13 @@ Les variables qui contribuent à la dimension 2 sont :
 
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Contributions à la dimension 2
-fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
-             palette = "jco")
+fviz_contrib(
+    res.mfa,
+    choice = "quanti.var",
+    axes = 2,
+    top = 20,
+    palette = "jco"
+)
 ```
 
 #### Dimension 1
@@ -173,8 +211,13 @@ On observe que les variables qui contribuent à la dimension 1 sont :
 
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Contributions à la dimension 2
-fviz_contrib (res.mfa, choice = "quanti.var", axes = 2, top = 20,
-             palette = "jco")
+fviz_contrib(
+    res.mfa,
+    choice = "quanti.var",
+    axes = 2,
+    top = 20,
+    palette = "jco"
+)
 ```
 
 
@@ -186,29 +229,47 @@ Les individus ayant des profils similaires sont proches sur le graphique. On obs
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Extraire le résultat des individus
 d1 <- d[, -23]
-res.mfa1 <- MFA(d1, 
-               group = c(4, 4, 4, 5, 4, 1), 
-               type = c("s", "s", "s", "s", "s", "n"),
-               name.group = c("1 month", "1 week", "2 months", "3 months", "before-surgery", "group"), num.group.sup = c(6),
-               graph = FALSE)
+res.mfa1 <- MFA(
+    d1,
+    group = c(4, 4, 4, 5, 4, 1),
+    type = c("s", "s", "s", "s", "s", "n"),
+    name.group = c(
+        "1 month",
+        "1 week",
+        "2 months",
+        "3 months",
+        "before-surgery",
+        "group"
+    ),
+    num.group.sup = c(6),
+    graph = FALSE
+)
 
 ind1 <- get_mfa_ind(res.mfa1)
-fviz_mfa_ind(res.mfa1, geom = "point", habillage = "group", shape = "group",
-             palette = c("#0b9a64", "#d1146e", "#077e97"),
-             addEllipses = TRUE, ellipse.type = "confidence", 
-             repel = TRUE
-             )
+fviz_mfa_ind(
+    res.mfa1,
+    geom = "point",
+    habillage = "group",
+    shape = "group",
+    palette = c("#0b9a64", "#d1146e", "#077e97"),
+    addEllipses = TRUE,
+    ellipse.type = "confidence",
+    repel = TRUE
+)
 ```
 
 ### Affichage du donneur
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Graphique des individus
 
-fviz_mfa_ind(res.mfa, habillage = "donnor",
-             palette = "jco",
-             addEllipses = TRUE, ellipse.type = "confidence", 
-             repel = TRUE 
-             )
+fviz_mfa_ind(
+    res.mfa,
+    habillage = "donnor",
+    palette = "jco",
+    addEllipses = TRUE,
+    ellipse.type = "confidence",
+    repel = TRUE
+)
 ```
 
 ## Clustering sur les dimensions de l'AFM {.tabset}
@@ -235,12 +296,12 @@ plot(clustering, choice = "3D.map")
 ### CLustering
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 fviz_cluster(clustering,
-             repel = TRUE,            # Evite le chevauchement des textes
-             show.clust.cent = TRUE, # Montre le centre des clusters
-             palette = c("#00AFBB", "#FC4E07", "#62bd50"),         # Palette de couleurs, voir ?ggpubr::ggpar
-             ggtheme = theme_minimal(),
-             main = "Factor map"
-             )
+    repel = TRUE, # Evite le chevauchement des textes
+    show.clust.cent = TRUE, # Montre le centre des clusters
+    palette = c("#00AFBB", "#FC4E07", "#62bd50"), # Palette de couleurs, voir ?ggpubr::ggpar
+    ggtheme = theme_minimal(),
+    main = "Factor map"
+)
 ```
 
 # Modèles mixtes sur le score composite
@@ -249,43 +310,56 @@ Comme vu précédemment, il s'agit de la deuxième composante principale de l'AF
 # Data management
 ind <- get_mfa_ind(res.mfa)
 a <- ind$coord.partiel
-a <- a[,c(2)]
+a <- a[, c(2)]
 a <- as.data.frame(a)
 a <- a %>% rename(Score = a)
 a <- tibble::rownames_to_column(a, "VALUE")
 a$id <- NULL
 a$time <- NULL
-for (i in 1:nrow(a)){
- a$id[i] <- strsplit(a$VALUE[i], ".", fixed = TRUE)[[1]][1]
- a$time[i] <- strsplit(a$VALUE[i], ".", fixed = TRUE)[[1]][2]
+for (i in 1:nrow(a)) {
+    a$id[i] <- strsplit(a$VALUE[i], ".", fixed = TRUE)[[1]][1]
+    a$time[i] <- strsplit(a$VALUE[i], ".", fixed = TRUE)[[1]][2]
 }
 a <- a %>% dplyr::select(id, time, Score, -VALUE)
 a$id <- as.factor(a$id)
 
-
-a$time <- factor(a$time, levels = c("before-surgery", "1 week", "1 month", "2 months", "3 months"))
+a$time <- factor(
+    a$time,
+    levels = c("before-surgery", "1 week", "1 month", "2 months", "3 months")
+)
 d$mouse <- rownames(d)
-a <- merge(a, unique(d[,c("mouse", "group", "donnor")]), by.x = "id", by.y = "mouse")
+a <- merge(
+    a,
+    unique(d[, c("mouse", "group", "donnor")]),
+    by.x = "id",
+    by.y = "mouse"
+)
 a$group <- relevel(factor(a$group), ref = "NG")
 ```
 
 ## Graphique en trellis
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center", fig.width= 10}
-p1 <- a %>% 
-  ggplot(aes(x = time,
-             y = Score,             
-             group = id)) +
-  geom_point(size = 0.75) +
-  geom_line(
-            alpha = .5,
-            size = 1) +
-  facet_grid(. ~ group)  +
-  theme_bw() +
-  scale_color_manual(values = colors) +
-  scale_x_discrete(labels = c('1','2','3','4','5'))+
-  xlab("Visit") + ylab("Composite Score") +
-  theme(strip.text.x = element_text(size = 12, face="bold", color ="white"),
-        strip.background = element_rect( fill="gray8"))
+p1 <- a %>%
+    ggplot(aes(
+        x = time,
+        y = Score,
+        group = id
+    )) +
+    geom_point(size = 0.75) +
+    geom_line(
+        alpha = .5,
+        size = 1
+    ) +
+    facet_grid(. ~ group) +
+    theme_bw() +
+    scale_color_manual(values = colors) +
+    scale_x_discrete(labels = c("1", "2", "3", "4", "5")) +
+    xlab("Visit") +
+    ylab("Composite Score") +
+    theme(
+        strip.text.x = element_text(size = 12, face = "bold", color = "white"),
+        strip.background = element_rect(fill = "gray8")
+    )
 p1
 ```
 
@@ -303,29 +377,33 @@ AIC(mod1)
 Anova(mod1)
 
 # Modèle avec l'effet d'intéraction temps/groupe en effet fixe
-mod2 <- lmerTest::lmer(Score ~ time*group + (1 | id), data = a)
+mod2 <- lmerTest::lmer(Score ~ time * group + (1 | id), data = a)
 
 
 # Tests de modèle emboîtés
-anova(mod1, mod2, 
-      model.names = c("RI", "RIAS"),
-      refit = FALSE) %>% 
-  pander::pander(caption = "LRT: Assess Significance of Random Slopes")
+anova(mod1, mod2,
+    model.names = c("RI", "RIAS"),
+    refit = FALSE
+) %>%
+    pander::pander(caption = "LRT: Assess Significance of Random Slopes")
 
 # Hypothèse
 # ggResidpanel::resid_panel(mod2)
 
 # Comparaisons post hoc
-mod2 %>% 
-  emmeans::emmeans(pairwise ~ time*group,
-                   at = list(age = 13))
+mod2 %>%
+    emmeans::emmeans(pairwise ~ time * group,
+        at = list(age = 13)
+    )
 ```
 
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 set_theme(base = theme_bw())
-sjPlot::plot_model(mod2, colors =  c("#077e97", "#0b9a64", "#d1146e"),
-                   type = "pred",
-                   terms = c("time", "group"), theme = "bw")
+sjPlot::plot_model(mod2,
+    colors = c("#077e97", "#0b9a64", "#d1146e"),
+    type = "pred",
+    terms = c("time", "group"), theme = "bw"
+)
 ```
 
 ### Temps comme continu
@@ -333,40 +411,41 @@ Effet significatif du temps et du groupe sur le score composite.
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 a$num_time <- as.numeric(a$time)
 # Modèle
-mod3 <- lmerTest::lmer(Score ~ num_time*group + (1 | id), data = a)
+mod3 <- lmerTest::lmer(Score ~ num_time * group + (1 | id), data = a)
 BIC(mod2)
 
-mod4 <- lmerTest::lmer(Score ~ num_time*group + (1 + num_time | id), data = a)
+mod4 <- lmerTest::lmer(Score ~ num_time * group + (1 + num_time | id), data = a)
 AIC(mod3)
 summary(mod3)
 
 # Test de modèles emboîtés
-anova(mod3, mod4, 
-      model.names = c("RI", "RIAS"),
-      refit = FALSE) %>% 
-  pander::pander(caption = "LRT: Assess Significance of Random Slopes")
+anova(mod3, mod4,
+    model.names = c("RI", "RIAS"),
+    refit = FALSE
+) %>%
+    pander::pander(caption = "LRT: Assess Significance of Random Slopes")
 
 # Hypothèse
 # ggResidpanel::resid_panel(mod3)
-
 ```
 
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 set_theme(base = theme_bw())
 p <- sjPlot::plot_model(mod4,
-                   type = "pred", colors =  c("#077e97", "#0b9a64", "#d1146e"),
-                   terms = c("num_time", "group"), theme = "bw")
+    type = "pred", colors = c("#077e97", "#0b9a64", "#d1146e"),
+    terms = c("num_time", "group"), theme = "bw"
+)
 p + xlab("time")
 ```
 
 ### Résumé et comparaison des modèles
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE, results = "asis"}
 # Analyse du modèle temporel uniquement
-knitreg(list(mod2, mod4), 
-                single.row = TRUE,
-                caption = "Comparaison des deux modèles",
-                caption.above = TRUE,  use.packages = FALSE
-                )
+knitreg(list(mod2, mod4),
+    single.row = TRUE,
+    caption = "Comparaison des deux modèles",
+    caption.above = TRUE, use.packages = FALSE
+)
 ```
 
 # Analyse des individus {.tabset}
@@ -374,15 +453,17 @@ knitreg(list(mod2, mod4),
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 data3 <- a %>% dplyr::filter(time == "before-surgery")
 data3 <- data3 %>% mutate(Score = round(Score, 4))
-p <- data3 %>% ggplot(aes(x = group, y = Score))+
-  geom_boxplot()+
-  geom_jitter()+
-  theme_classic()
+p <- data3 %>% ggplot(aes(x = group, y = Score)) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
 l <- plotly::ggplotly(p)
 
-l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
-                               "Donnor:", data3$donnor_id , "<br>",
-                           "Mouse:", data3$id)
+l[[1]]$data[[2]]$text <- paste(
+    "Score:", data3$Score, "<br>",
+    "Donnor:", data3$donnor_id, "<br>",
+    "Mouse:", data3$id
+)
 htmltools::tagList(l)
 ```
 
@@ -390,15 +471,17 @@ htmltools::tagList(l)
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 data3 <- a %>% dplyr::filter(time == "1 week")
 data3 <- data3 %>% mutate(Score = round(Score, 4))
-p <- data3 %>% ggplot(aes(x = group, y = Score))+
-  geom_boxplot()+
-  geom_jitter()+
-  theme_classic()
+p <- data3 %>% ggplot(aes(x = group, y = Score)) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
 l <- plotly::ggplotly(p)
 
-l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
-                               "Donnor:", data3$donnor_id , "<br>",
-                           "Mouse:", data3$id)
+l[[1]]$data[[2]]$text <- paste(
+    "Score:", data3$Score, "<br>",
+    "Donnor:", data3$donnor_id, "<br>",
+    "Mouse:", data3$id
+)
 htmltools::tagList(l)
 ```
 
@@ -406,15 +489,17 @@ htmltools::tagList(l)
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 data3 <- a %>% dplyr::filter(time == "1 month")
 data3 <- data3 %>% mutate(Score = round(Score, 4))
-p <- data3 %>% ggplot(aes(x = group, y = Score))+
-  geom_boxplot()+
-  geom_jitter()+
-  theme_classic()
+p <- data3 %>% ggplot(aes(x = group, y = Score)) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
 l <- plotly::ggplotly(p)
 
-l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
-                               "Donnor:", data3$donnor_id , "<br>",
-                           "Mouse:", data3$id)
+l[[1]]$data[[2]]$text <- paste(
+    "Score:", data3$Score, "<br>",
+    "Donnor:", data3$donnor_id, "<br>",
+    "Mouse:", data3$id
+)
 htmltools::tagList(l)
 ```
 
@@ -422,15 +507,17 @@ htmltools::tagList(l)
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 data3 <- a %>% dplyr::filter(time == "2 months")
 data3 <- data3 %>% mutate(Score = round(Score, 4))
-p <- data3 %>% ggplot(aes(x = group, y = Score))+
-  geom_boxplot()+
-  geom_jitter()+
-  theme_classic()
+p <- data3 %>% ggplot(aes(x = group, y = Score)) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
 l <- plotly::ggplotly(p)
 
-l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
-                               "Donnor:", data3$donnor_id , "<br>",
-                           "Mouse:", data3$id)
+l[[1]]$data[[2]]$text <- paste(
+    "Score:", data3$Score, "<br>",
+    "Donnor:", data3$donnor_id, "<br>",
+    "Mouse:", data3$id
+)
 htmltools::tagList(l)
 ```
 
@@ -438,15 +525,17 @@ htmltools::tagList(l)
 ```{r , echo=FALSE, fig.align = 'center', warning = FALSE}
 data3 <- a %>% dplyr::filter(time == "3 months")
 data3 <- data3 %>% mutate(Score = round(Score, 4))
-p <- data3 %>% ggplot(aes(x = group, y = Score))+
-  geom_boxplot()+
-  geom_jitter()+
-  theme_classic()
+p <- data3 %>% ggplot(aes(x = group, y = Score)) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
 l <- plotly::ggplotly(p)
 
-l[[1]]$data[[2]]$text <- paste("Score:", data3$Score , "<br>",
-                               "Donnor:", data3$donnor_id , "<br>",
-                           "Mouse:", data3$id)
+l[[1]]$data[[2]]$text <- paste(
+    "Score:", data3$Score, "<br>",
+    "Donnor:", data3$donnor_id, "<br>",
+    "Mouse:", data3$id
+)
 htmltools::tagList(l)
 ```
 

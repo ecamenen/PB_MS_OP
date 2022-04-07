@@ -402,15 +402,17 @@ usethis::use_data(behavioral_tests_no_replicates_median, overwrite = TRUE)
 test_formatted <- c("time", "errors", "front", "all")
 time_formatted <- c("before", "1week", "1month", "2months", "3months")
 for (i in seq(4)) {
-  par(mfrow = c(2, 3))
+    par(mfrow = c(2, 3))
     colnames(multiblock[[i]]) <- paste(test_formatted[i], time_formatted, sep = "_")
     rownames(multiblock[[i]]) <- paste(data$Donnor, data$Mouse)
-    if (i == 1)
-      multiblock[[i]] <- log(multiblock[[i]])
-    if (i == 2)
-      multiblock[[i]] <- sqrt(multiblock[[i]])
+    if (i == 1) {
+        multiblock[[i]] <- log(multiblock[[i]])
+    }
+    if (i == 2) {
+        multiblock[[i]] <- sqrt(multiblock[[i]])
+    }
     for (j in seq(5)) {
-      hist(multiblock[[i]][, j], main = colnames(multiblock[[i]])[j], xlab = "")
+        hist(multiblock[[i]][, j], main = colnames(multiblock[[i]])[j], xlab = "")
     }
 }
 par(mfrow = c(1, 1))

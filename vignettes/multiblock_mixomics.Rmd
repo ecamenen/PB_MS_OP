@@ -115,8 +115,8 @@ model <- block.splsda(X = data, Y = Y, ncomp = ncomp, keepX = selected, design =
 model$prop_expl_var
 plotDiablo(model, ncomp = 1)
 if (ncomp > 1) {
-      plot_model(model)
-  }
+    plot_model(model)
+}
 # Number of errors and front limb only are the best discriminant
 ```
 
@@ -167,8 +167,8 @@ model <- block.spls(
     design = create_design(0.5)
 )
 if (ncomp > 1) {
-      plot_model(model)
-  }
+    plot_model(model)
+}
 ```
 
 ```{r end}
