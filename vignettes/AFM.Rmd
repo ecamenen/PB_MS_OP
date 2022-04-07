@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
 library(tidyr)
 library(FactoMineR)
-library("xlsx")
 library(factoextra)
 library(MASS)
 library(tidyverse)
@@ -29,14 +28,6 @@ library(lme4) # Linear, generalized linear, & nonlinear mixed models
 
 library(texreg) # Convert Regression Output to LaTeX or HTML Tables
 library(sjPlot) # ICC calculations
-
-data <- read.csv("/home/baptiste.criniere/Documents/Oceane/data_long_mean.csv")
-data$time_ord <- factor(data$time, levels = c("Before-Surgery", "1 Week", "1 Month", "2 Months", "3 Months"))
-data$group <- relevel(data$group, ref = "NG")
-data1 <- read.xlsx("/home/baptiste.criniere/Documents/PB_MS_OP/inst/extdata/comportement_tests.xlsx", 1, startRow = 3, header=TRUE, colClasses=NA)
-data1 <- data1[,c("X3.Months.13")]
-data$speed <- data1
-`%ni%` <- Negate(`%in%`)
 ```
 
 # Qu'est ce que l'AFM ?
@@ -57,33 +48,32 @@ Dans notre cas, on se trouve dans un contexte où un même individu (une souris)
 Nous allons appliquer la première méthode dans laquelle les variables observées sont regroupées par temps.
 
 # Analyse Factorielle Multiple 
-```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE}
-# Data management, organisation des données pour la AFM
-# On transforme la variable nb of errors en sqrt car variable de comptage
-data2 <- data %>% mutate(sqrt_nb_of_errors = sqrt(number_of_errors))
-# On transforme la variable time to cross en log
-data2 <- data2 %>% mutate(log_time_to_cross = log(time_to_cross))
+```{r}
+# Convert in time blocks
+data(behavioral_tests_multiblock)
+blocks <- lapply(seq(5), function(i) sapply(behavioral_tests_multiblock[-5], function(j) j[, i]))
+blocks[[5]] <- cbind(blocks[[5]], behavioral_tests_multiblock[[5]])
 
-data2 <- data2 %>% dplyr::select(-time_ord, -donnor_id, -group, -num_time, -number_of_errors, -time_to_cross, -speed)
-d <- data2 %>% 
-     gather(key, value, -time, -mouse) %>%  
-     unite(new.col, c(key, time)) %>%   
-     spread(new.col, value) 
 
-d <- merge(d, unique(data[,c("mouse", "speed", "group", "donnor_id")]), by.x = "mouse", by.y = "mouse")
-row.names(d) <- d$mouse
-d <- d %>% dplyr::select(-mouse)
-d <- d[, c(1,6,11,16,2,7,12,17,3,8,13,18,4,9,14,19,21,5,10,15,20,22,23)]
-names(d)
+Y <- row.names(blocks[[1]])
+group <- gsub("(\\w{2,3}).*", "\\1", Y)
+donnor <- gsub("(\\w{2,3} \\d).*", "\\1", Y)
 
-# On lance l'AFM
-res.mfa <- MFA(d, 
-               group = c(4, 4, 4, 5, 4, 1, 1), 
-               type = c("s", "s", "s", "s", "s", "n", "n"),
-               name.group = c("1 month", "1 week", "2 months", "3 months", "before-surgery", "group", "donnor"), num.group.sup = c(6, 7),
-               graph = FALSE)
+times <- c("before-surgery", "1 month", "1 week", "2 months", "3 months")
+names(d) <- times
+
+d <- Reduce(cbind, blocks)
+d <- cbind(d, group, donnor)
 ```
 
+```{r}
+# On lance l'AFM
+res.mfa <- MFA(d, 
+               group = c(4, 4, 4, 4, 5, 1, 1), 
+               type = c("s", "s", "s", "s", "s", "n", "n"),
+               name.group = c(times, "group", "donnor"), num.group.sup = c(6, 7),
+               graph = FALSE)
+```
 
 ## Pourcentage de variance expliquée par chaque axes
 Les deux premières dimensions permettent d'expliquer 41% de la variance totale de nos données. Le critère du coude semble nous indique de conserver les deux premières dimensions de l'AFM.
@@ -195,7 +185,7 @@ Les individus ayant des profils similaires sont proches sur le graphique. On obs
 ### Affichage du groupe
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Extraire le résultat des individus
-d1 <- d %>% dplyr::select(-donnor_id)
+d1 <- d[, -23]
 res.mfa1 <- MFA(d1, 
                group = c(4, 4, 4, 5, 4, 1), 
                type = c("s", "s", "s", "s", "s", "n"),
@@ -214,7 +204,7 @@ fviz_mfa_ind(res.mfa1, geom = "point", habillage = "group", shape = "group",
 ```{r, echo=FALSE, results='hide', message=FALSE,  warning=FALSE, fig.align = "center"}
 # Graphique des individus
 
-fviz_mfa_ind(res.mfa, habillage = "donnor_id",
+fviz_mfa_ind(res.mfa, habillage = "donnor",
              palette = "jco",
              addEllipses = TRUE, ellipse.type = "confidence", 
              repel = TRUE 
@@ -274,8 +264,9 @@ a$id <- as.factor(a$id)
 
 
 a$time <- factor(a$time, levels = c("before-surgery", "1 week", "1 month", "2 months", "3 months"))
-a <- merge(a, unique(data[,c("mouse", "group", "donnor_id")]), by.x = "id", by.y = "mouse")
-a$group <- relevel(a$group, ref = "NG")
+d$mouse <- rownames(d)
+a <- merge(a, unique(d[,c("mouse", "group", "donnor")]), by.x = "id", by.y = "mouse")
+a$group <- relevel(factor(a$group), ref = "NG")
 ```
 
 ## Graphique en trellis
