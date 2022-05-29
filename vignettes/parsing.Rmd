@@ -28,7 +28,8 @@ load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "o
 ### Global variables
 ```{r}
 sheet <- "Ligne"
-file <- file.path(golem::get_golem_wd(), "inst", "extdata", "comportement_tests.xlsx")
+path <- system.file("extdata", package = "perrot")
+file <- file.path(path, "comportement_tests.xlsx")
 ```
 
 ### Extract test names
