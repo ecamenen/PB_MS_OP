@@ -14,4 +14,4 @@ tiff$
 ^Meta$
 ^README\.Rmd$
 ^\.github$
-^\vignettes/multiblock_rgcca.Rmd$
+^\vignettes\multiblock_rgcca.Rmd$
