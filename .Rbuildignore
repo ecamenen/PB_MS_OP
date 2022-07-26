@@ -1,0 +1,17 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.idea$
+^\.Rprofile$
+^dev$
+tsv$
+tiff$
+^Dockerfile$
+^\.dockerignore$
+^.local$
+^.config$
+^.cache$
+^doc$
+^Meta$
+^README\.Rmd$
+^\.github$
+^\vignettes/multiblock_rgcca\.Rmd$

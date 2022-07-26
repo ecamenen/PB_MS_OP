@@ -1,0 +1,119 @@
+---
+title: "multiblock_rgcca"
+output:
+    rmarkdown::html_vignette:
+      fig_width: 7
+      fig_height: 6
+vignette: >
+  %\VignetteIndexEntry{multiblock_rgcca}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r setup, echo = FALSE, warning = FALSE, message = FALSE}
+library(perrot)
+load_libraries(c("readxl", "RGCCA", "corrplot", "FactoMineR", "factoextra"))
+if (!("RGCCA" %in% installed.packages()[, "Package"]) ||
+    as.double(paste(unlist(packageVersion("RGCCA"))[seq(2)], collapse = ".")) < 3.0) {
+    devtools::install_github("rgcca-factory/RGCCA", ref = "3.0.0")
+}
+```
+
+```{r data}
+data(behavioral_tests_multiblock)
+
+blocks <- lapply(behavioral_tests_multiblock, function(b) b[, -seq(2)])
+blocks[[5]] <- behavioral_tests_multiblock[[5]]
+outlier <- which(row.names(blocks[[1]]) == "HD 17 16")
+blocks <- lapply(blocks, function(b) b[-outlier, , drop = FALSE])
+
+Y <- row.names(blocks[[1]])
+Y <- gsub("(\\w{2,3}).*", "\\1", Y) -> grp
+Y <- as.numeric(as.factor(Y))
+Y <- data.frame(Y)
+row.names(Y) <- row.names(blocks[[1]])
+
+n <- length(blocks) + 1
+blocks[[n]] <- Y
+names(blocks)[n] <- "grp"
+```
+
+```{r rgcca}
+# ncomp = c(2, 2, 2, 2, , 1, 1)
+rgcca_res <- rgcca(blocks = blocks, ncomp = 1, response = n, tau = "optimal")
+eval <- rgcca_cv_k(rgcca_res, validation = "loo", n_cores = 1)
+round(eval$scores, 3)
+plot_network(rgcca_res)
+plot_ave(rgcca_res)
+plot_var_1D(rgcca_res, i_block = 2)
+plot_var_1D(rgcca_res, i_block = 3)
+# 3 months have a low contribution for both blocks
+plot_ind(
+    rgcca_res,
+    i_block = 2,
+    i_block_y = 3,
+    compx = 1,
+    compy = 1,
+    resp = grp,
+    title = "",
+    color = c("#3c78b4", "#cd5b45", "#71ad65")
+)
+```
+
+```{r tests}
+blocks_rgcca <- data.frame(Reduce(cbind, rgcca_res$Y))
+colnames(blocks_rgcca) <- names(blocks)
+
+path <- file.path("~", "inst", "extdata")
+write.table(blocks_rgcca, file = file.path(path, "comp1_rgcca.tsv"), row.names = TRUE, sep = "\t")
+
+(M <- cor(blocks_rgcca, use = "pairwise.complete.obs"))
+# sapply(
+#     names(behavioral_tests_multiblock),
+#     function(i) {
+#         cor.test(
+#             rgcca_res$Y[[i]],
+#             rgcca_res$Y[["grp"]]
+#         )$p.value
+#     }
+# )
+corrplot(M, type = "lower", diag = FALSE, addCoef.col = "black")
+# Speed correlation faible
+```
+
+```{r pca}
+pca_res <- PCA(blocks_rgcca, scale.unit = TRUE, ncp = 2, grap = FALSE)
+fviz_eig(pca_res, addlabels = TRUE, ylim = c(0, 50))
+fviz_pca_var(
+    pca_res,
+    col.var = "contrib",
+    gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07")
+)
+fviz_pca_ind(pca_res,
+    col.ind = "cos2",
+    gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+    repel = TRUE
+)
+(ind <- fviz_pca_ind(
+    pca_res,
+    geom.ind = "point",
+    col.ind = grp,
+    palette = c("#00AFBB", "#FC4E07", "#62bd50"),
+    addEllipses = TRUE,
+    legend.title = "Groups"
+))
+tiff("data/pca_ind_months.tiff", units = "px", width = 2000, height = 2000, res = 300)
+ind
+dev.off()
+```
+
+```{r end}
+sessionInfo()
+```
