@@ -22,7 +22,6 @@ Imports:
     ggplot2,
     ggpubr,
     ggResidpanel,
-    golem,
     kableExtra,
     lme4,
     lmerTest,
@@ -43,6 +42,7 @@ Imports:
 Suggests:
     BiocCheck,
     devtools,
+    golem,
     knitr,
     rmarkdown,
     testthat

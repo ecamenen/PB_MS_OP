@@ -28,7 +28,8 @@ load_libraries(c("buildmer", "car", "emmeans", "ggplot2", "lme4", "lmerTest", "o
 ### Global variables
 ```{r}
 sheet <- "Ligne"
-file <- file.path(golem::get_golem_wd(), "inst", "extdata", "comportement_tests.xlsx")
+path <- system.file("extdata", package = "perrot")
+file <- file.path(path, "comportement_tests.xlsx")
 ```
 
 ### Extract test names
@@ -410,7 +411,6 @@ par(mfrow = c(1, 1))
 names(multiblock) <- name_subtests
 
 
-path <- file.path("~", "inst", "extdata")
 speed <- data.frame(read_excel(file.path(path, "comportement_tests.xlsx"), sheet = sheet, skip = 2)[, 65])
 # hist(speed)
 colnames(speed) <- "speed"
